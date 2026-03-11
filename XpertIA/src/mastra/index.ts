@@ -1,20 +1,20 @@
-
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
-import { LibSQLStore } from '@mastra/libsql';
+import { PostgresStore } from '@mastra/pg';
 import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } from '@mastra/observability';
 import { weatherWorkflow } from './workflows/weather-workflow';
 import { weatherAgent } from './agents/weather-agent';
+import { conversationalAgent } from './agents/conversational-agent';
 import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
 
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
-  agents: { weatherAgent },
+  agents: { weatherAgent, conversationalAgent },
   scorers: { toolCallAppropriatenessScorer, completenessScorer, translationScorer },
-  storage: new LibSQLStore({
+  storage: new PostgresStore({
     id: "mastra-storage",
-    // stores observability, scores, ... into persistent file storage
-    url: "file:./mastra.db",
+    connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',
+    // stores observability, scores, ... into PostgreSQL
   }),
   logger: new PinoLogger({
     name: 'Mastra',

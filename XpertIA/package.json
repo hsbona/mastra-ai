@@ -20,7 +20,7 @@
   "dependencies": {
     "@mastra/core": "^1.11.0",
     "@mastra/evals": "^1.1.2",
-    "@mastra/libsql": "^1.7.0",
+    "@mastra/pg": "^1.0.0",
     "@mastra/loggers": "^1.0.2",
     "@mastra/memory": "^1.6.2",
     "@mastra/observability": "^1.4.0",

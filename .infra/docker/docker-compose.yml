@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: xpertia-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mastra}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mastra_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-xpertia}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mastra} -d ${POSTGRES_DB:-xpertia}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - xpertia-network
+
+volumes:
+  postgres_data:
+    name: xpertia-postgres-data
+
+networks:
+  xpertia-network:
+    name: xpertia-network
+    driver: bridge
