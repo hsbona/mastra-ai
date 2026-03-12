@@ -10,6 +10,7 @@ import { researchAgent } from './agents/shared/research';
 import { docProcessorAgent } from './agents/shared/doc-processor';
 import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
 import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
+import { xpertGovCoordinator } from './agents/xpert-gov';
 import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
 import { fileTools } from './tools/file-tools';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
@@ -20,6 +21,9 @@ export { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool };
 
 // Exportar agentes especializados
 export { researchAgent, docProcessorAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
+
+// Exportar coordenador principal
+export { xpertGovCoordinator };
 
 // ============================================
 // WORKSPACE - Área de trabalho persistente
@@ -63,6 +67,7 @@ export const mastra = new Mastra({
     docProcessorAgent,
     xpertGovAnalystAgent,
     xpertGovWriterAgent,
+    xpertGovCoordinator,
   },
   scorers: { toolCallAppropriatenessScorer, completenessScorer, translationScorer },
   workspace,
