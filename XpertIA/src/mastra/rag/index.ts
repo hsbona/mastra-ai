@@ -2,25 +2,43 @@
  * Sistema RAG (Retrieval-Augmented Generation)
  * 
  * Pipeline completo: document loading → chunking → embedding → vector storage → semantic search
+ * 
+ * PROVEDOR AGNÓSTICO: O provedor de embeddings pode ser trocado via:
+ * - Variável de ambiente: EMBEDDING_PROVIDER=openrouter|openai|cohere
+ * - Código: createEmbeddingProvider({ type: 'openrouter' })
  */
 
-import { embedMany, embed } from 'ai';
-import { ModelRouterEmbeddingModel } from '@mastra/core/llm';
 import { MDocument } from '@mastra/rag';
 import { pgVector } from '../vector-store';
 import { readFileSync } from 'fs';
 import { readPDFTool, readDOCXTool } from '../tools/file-tools';
 import * as path from 'path';
+import type { EmbeddingProvider } from './embeddings';
+import { createEmbeddingProvider, getDefaultProvider } from './embeddings';
 
 // ============================================
 // CONFIGURAÇÃO
 // ============================================
 
-/** Modelo de embedding - text-embedding-3-large (3072 dimensões) */
-const EMBEDDING_MODEL = 'openai/text-embedding-3-large';
+/** Provider de embeddings (lazy singleton) - troque via EMBEDDING_PROVIDER env var */
+let embeddingProvider: EmbeddingProvider | null = null;
 
-/** Dimensão dos embeddings (text-embedding-3-large = 3072) */
-const EMBEDDING_DIMENSION = 3072;
+/** 
+ * Retorna o provider de embeddings (lazy initialization)
+ * Garante que as env vars estejam carregadas antes de criar o provider
+ */
+function getProvider(): EmbeddingProvider {
+  if (!embeddingProvider) {
+    embeddingProvider = getDefaultProvider();
+  }
+  return embeddingProvider;
+}
+
+/** 
+ * Dimensão dos embeddings (obtida do provider configurado)
+ * Usa getter para lazy evaluation
+ */
+const getEmbeddingDimension = (): number => getProvider().config.dimensions;
 
 /** Tamanho máximo de cada chunk (em caracteres) */
 const CHUNK_SIZE = 1000;
@@ -80,6 +98,7 @@ export interface IndexResult {
  * @returns Texto extraído e metadata do documento
  */
 export async function processDocument(filePath: string): Promise<ProcessedDocument> {
+  // Se for caminho absoluto, usa diretamente; senão, assume que está em ./workspace
   const resolvedPath = path.isAbsolute(filePath) 
     ? filePath 
     : path.join('./workspace', filePath);
@@ -111,7 +130,7 @@ export async function processDocument(filePath: string): Promise<ProcessedDocume
  */
 async function extractFromPDF(filePath: string, fileName: string): Promise<ProcessedDocument> {
   const result = await readPDFTool.execute({ 
-    context: { filePath: path.relative('./workspace', filePath) } 
+    filePath: path.relative('./workspace', filePath) 
   });
   
   if (!result.success) {
@@ -134,7 +153,7 @@ async function extractFromPDF(filePath: string, fileName: string): Promise<Proce
  */
 async function extractFromDOCX(filePath: string, fileName: string): Promise<ProcessedDocument> {
   const result = await readDOCXTool.execute({ 
-    context: { filePath: path.relative('./workspace', filePath) } 
+    filePath: path.relative('./workspace', filePath) 
   });
   
   if (!result.success) {
@@ -232,41 +251,38 @@ export async function chunkDocument(
 }
 
 // ============================================
-// FUNÇÕES DE EMBEDDING
+// FUNÇÕES DE EMBEDDING (Provider Agnóstico)
 // ============================================
 
 /**
- * Gera embeddings para múltiplos textos usando Model Router
+ * Gera embeddings para múltiplos textos usando o provider configurado
+ * 
+ * O provider é determinado pela variável EMBEDDING_PROVIDER ou 
+ * pode ser sobrescrito via createEmbeddingProvider()
  * 
  * @param texts - Array de textos para gerar embeddings
  * @returns Array de embeddings (vetores numéricos)
  */
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
-  if (texts.length === 0) {
-    return [];
-  }
-  
-  const { embeddings } = await embedMany({
-    model: new ModelRouterEmbeddingModel(EMBEDDING_MODEL),
-    values: texts,
-  });
-  
-  return embeddings;
+  return getProvider().generateEmbeddings(texts);
 }
 
 /**
- * Gera embedding para um único texto
+ * Gera embedding para um único texto usando o provider configurado
  * 
  * @param text - Texto para gerar embedding
  * @returns Vetor de embedding
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const result = await embed({
-    model: new ModelRouterEmbeddingModel(EMBEDDING_MODEL),
-    value: text,
-  });
-  
-  return result.embedding;
+  return getProvider().generateEmbedding(text);
+}
+
+/**
+ * Retorna o provider de embeddings atual
+ * Útil para verificar configuração ou trocar dinamicamente
+ */
+export function getEmbeddingProvider(): EmbeddingProvider {
+  return getProvider();
 }
 
 // ============================================
@@ -278,13 +294,13 @@ export async function generateEmbedding(text: string): Promise<number[]> {
  * 
  * @param indexName - Nome do índice
  */
-async function ensureIndex(indexName: string): Promise<void> {
+export async function ensureIndex(indexName: string): Promise<void> {
   const indexes = await pgVector.listIndexes();
   
   if (!indexes.includes(indexName)) {
     await pgVector.createIndex({
       indexName,
-      dimension: EMBEDDING_DIMENSION,
+      dimension: getEmbeddingDimension(),
       metric: SIMILARITY_METRIC,
       indexConfig: { type: 'hnsw', hnsw: { m: 16, efConstruction: 64 } },
       metadataIndexes: ['source', 'title', 'chunkIndex'],
@@ -522,3 +538,34 @@ export async function countVectors(indexName: string): Promise<number> {
   const stats = await pgVector.describeIndex(indexName);
   return stats.count;
 }
+
+// ============================================
+// RE-EXPORTS DO SISTEMA DE EMBEDDINGS
+// ============================================
+
+export type {
+  // Interfaces
+  EmbeddingProvider,
+  EmbeddingConfig,
+  ProviderType,
+  ProviderFactoryConfig,
+} from './embeddings';
+
+export {
+  // Factory
+  createEmbeddingProvider,
+  getDefaultProvider,
+  checkProviderAvailability,
+  
+  // Implementações específicas
+  OpenRouterEmbeddingProvider,
+  createOpenRouterProvider,
+  MockEmbeddingProvider,
+  createMockProvider,
+} from './embeddings';
+
+// ============================================
+// EXPORT DO PGVECTOR (para scripts externos)
+// ============================================
+
+export { pgVector } from '../vector-store';

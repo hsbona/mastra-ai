@@ -6,6 +6,7 @@
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { PDFDocument } from 'pdf-lib';
+import PDFParser from 'pdf2json';
 import * as XLSX from 'xlsx';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import mammoth from 'mammoth';
@@ -34,32 +35,61 @@ export const readPDFTool = createTool({
     }),
     error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ filePath, startPage, endPage }: { filePath: string; startPage?: number; endPage?: number }) => {
     try {
-      const fullPath = path.join('./workspace', context.filePath);
-      const fileBuffer = await fs.readFile(fullPath);
+      const fullPath = path.join('./workspace', filePath);
       
+      // Extrair texto usando pdf2json
+      const text = await new Promise<string>((resolve, reject) => {
+        const pdfParser = new PDFParser();
+        
+        pdfParser.on('pdfParser_dataError', (errData) => {
+          reject(new Error(errData.parserError || 'Erro ao parsear PDF'));
+        });
+        
+        pdfParser.on('pdfParser_dataReady', (pdfData) => {
+          // Extrair texto de todas as páginas
+          let extractedText = '';
+          if (pdfData.Pages && Array.isArray(pdfData.Pages)) {
+            pdfData.Pages.forEach((page: any) => {
+              if (page.Texts && Array.isArray(page.Texts)) {
+                page.Texts.forEach((textItem: any) => {
+                  if (textItem.R && Array.isArray(textItem.R)) {
+                    textItem.R.forEach((r: any) => {
+                      if (r.T) {
+                        // Decodificar URI encoding (se necessário)
+                        try {
+                          extractedText += decodeURIComponent(r.T) + ' ';
+                        } catch {
+                          // Se falhar, usar texto como está
+                          extractedText += r.T + ' ';
+                        }
+                      }
+                    });
+                  }
+                });
+                extractedText += '\n';
+              }
+            });
+          }
+          resolve(extractedText.trim());
+        });
+        
+        pdfParser.loadPDF(fullPath);
+      });
+      
+      // Contar páginas usando pdf-lib (já está carregado)
+      const fileBuffer = await fs.readFile(fullPath);
       const pdfDoc = await PDFDocument.load(fileBuffer);
       const totalPages = pdfDoc.getPageCount();
       
-      const startPage = (context.startPage ?? 1) - 1;
-      const endPage = Math.min(context.endPage ?? totalPages, totalPages);
-      
-      // pdf-lib não extrai texto diretamente, precisamos de uma abordagem alternativa
-      // Usando pdf-lib apenas para metadata e contagem de páginas
-      // Para extração de texto, vamos usar uma abordagem simplificada
-      
-      // Nota: pdf-lib é melhor para manipulação/criação de PDFs
-      // Para extração de texto puro, idealmente usaríamos pdf-parse
-      // Mas vamos implementar uma versão básica que retorna informações úteis
-      
       return {
         success: true,
-        text: `[PDF com ${totalPages} páginas. Para extração completa de texto, usar ferramenta especializada. Páginas solicitadas: ${startPage + 1} a ${endPage}]`,
+        text: text,
         metadata: {
           totalPages,
-          extractedPages: endPage - startPage,
-          fileName: path.basename(context.filePath),
+          extractedPages: totalPages,
+          fileName: path.basename(filePath),
         },
       };
     } catch (error) {
