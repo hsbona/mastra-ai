@@ -81,10 +81,21 @@ pnpm install
 **Inicia o Mastra Studio** em `http://localhost:4111`:
 
 ```bash
-pnpm run dev
+# Iniciar tudo (túnel SSH + Mastra Studio)
+./scripts/mastra-studio.sh start
+
+# Verificar status
+./scripts/mastra-studio.sh status
+
+# Ver logs em tempo real
+./scripts/mastra-studio.sh logs
+
+# Parar tudo
+./scripts/mastra-studio.sh stop
 ```
 
 > O Mastra Studio é a interface de desenvolvimento e consumo dos agents.
+> O script gerencia automaticamente o túnel SSH e a inicialização.
 
 ### Build
 
@@ -171,40 +182,44 @@ Tools são criadas com `createTool` e podem ser usadas por agents ou workflows.
 
 ## Infrastructure Setup
 
-### PostgreSQL com Docker
+### ⚠️ IMPORTANTE: PostgreSQL Remoto via SSH Tunnel
 
-O projeto utiliza PostgreSQL com extensão pgvector para storage e busca vetorial.
+**NUNCA** use PostgreSQL localmente. O projeto utiliza um banco de dados PostgreSQL **remoto** em VPS.
 
-#### 1. Iniciar a infraestrutura
+#### 1. Iniciar o Túnel SSH (OBRIGATÓRIO antes de rodar o Mastra)
 
-```bash
-cd .infra/docker
-cp .env.example .env
-# Edite .env se necessário
-docker-compose up -d
-```
-
-#### 2. Configurar variáveis de ambiente
-
-No arquivo `.env` do projeto (raiz):
+O túnel conecta `localhost:5432` → `VPS:5432` via SSH:
 
 ```bash
-DATABASE_URL=postgresql://mastra:mastra_secret@localhost:5432/xpertia
+# Iniciar túnel
+./scripts/tunnel-vps.sh start
+
+# Verificar status
+./scripts/tunnel-vps.sh status
+
+# Parar túnel
+./scripts/tunnel-vps.sh stop
 ```
+
+#### 2. Configuração
+
+A `DATABASE_URL` já está configurada em `.env` para apontar para `localhost:5432` (túnel).
+
+**NÃO ALTERE** para conexão direta ao VPS - sempre use o túnel SSH por segurança.
 
 #### 3. Verificar conexão
 
 ```bash
-docker-compose ps
+# Deve mostrar: PostgreSQL (localhost:5432): CONECTADO
+./scripts/tunnel-vps.sh status
 ```
 
-#### 4. Parar a infraestrutura
+#### 4. Sobre a pasta `.infra/`
 
-```bash
-docker-compose down
-```
+A pasta `.infra/docker/` contém definições Docker **apenas para referência** da infraestrutura remota.
 
-> Veja `.infra/docker/README.md` para mais detalhes.
+> **NÃO execute** `docker-compose` localmente a menos que explicitamente solicitado.
+> O Docker roda na VPS externa, não na máquina de desenvolvimento.
 
 ---
 
@@ -242,7 +257,7 @@ Skills are automatically available to agents in your project once installed. Age
 Ao criar um novo agent, workflow ou tool:
 
 - [ ] Carregou a skill `/mastra` antes de começar?
-- [ ] PostgreSQL está rodando (`docker-compose -f .infra/docker/docker-compose.yml ps`)?
+- [ ] Mastra Studio iniciado via `./scripts/mastra-studio.sh start`?
 - [ ] Definiu o agent/workflow/tool no arquivo apropriado em `src/mastra/`?
 - [ ] Exportou e registrou em `src/mastra/index.ts`?
 - [ ] Testou via Mastra Studio (`pnpm run dev`)?
