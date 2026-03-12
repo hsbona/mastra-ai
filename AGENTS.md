@@ -84,9 +84,9 @@ src/mastra/
 ```bash
 # Desenvolvimento (inicia Mastra Studio em localhost:4111)
 # Execute a partir da pasta XpertIA/
-cd XpertIA && ./scripts/mastra-studio.sh start   # Inicia túnel + studio
+cd XpertIA && ./scripts/mastra-studio.sh start   # Inicia Studio (conexão direta)
 ./scripts/mastra-studio.sh status  # Verifica status
-./scripts/mastra-studio.sh stop    # Para tudo
+./scripts/mastra-studio.sh stop    # Para Studio
 ./scripts/mastra-studio.sh logs    # Logs em tempo real
 
 # Build e produção (execute de dentro de XpertIA/)
@@ -98,17 +98,17 @@ pnpm run start
 
 ## Infraestrutura
 
-### PostgreSQL Remoto (via Túnel SSH)
+### PostgreSQL Remoto (Conexão Direta)
 
-**NUNCA** use PostgreSQL local. O banco está em VPS e requer túnel:
+**ATUALIZAÇÃO:** A conexão ao PostgreSQL é feita **diretamente** via porta 5432 (SSL obrigatório).
 
 ```bash
-./scripts/tunnel-vps.sh start    # Inicia túnel localhost:5432 → VPS:5432
-./scripts/tunnel-vps.sh status   # Verifica conexão
+./scripts/mastra-studio.sh start    # Inicia Studio (conexão direta ao VPS)
+./scripts/mastra-studio.sh status   # Verifica conexão
 ```
 
-- `DATABASE_URL` aponta para `localhost:5432` (via túnel)
-- **NÃO** altere para conexão direta ao VPS
+- `DATABASE_URL` aponta diretamente para `5.189.185.146:5432` (com SSL)
+- **NÃO** é mais necessário túnel SSH
 - `.infra/docker/` é apenas referência — não execute `docker-compose` localmente
 
 ### 🗄️ Banco de Dados — PROIBIDO SEM AUTORIZAÇÃO
@@ -215,7 +215,7 @@ Use `.task/[nome].md`:
 ## Checklist
 
 - [ ] Carregou a skill `/mastra`?
-- [ ] Túnel SSH ativo (`./scripts/tunnel-vps.sh status`)?
+- [ ] PostgreSQL acessível (`./scripts/mastra-studio.sh status`)?
 - [ ] Mastra Studio iniciado (`./scripts/mastra-studio.sh start`)?
 - [ ] Criou em `src/mastra/{agents,workflows,tools}/`?
 - [ ] Exportou em `src/mastra/index.ts`?

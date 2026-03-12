@@ -3,17 +3,19 @@
 # XpertIA - Script de Inicialização do Mastra Studio
 # ============================================
 # Este script gerencia todo o ciclo de vida do Mastra Studio:
-# 1. Verifica/inicia túnel SSH para VPS
-# 2. Verifica conexão com PostgreSQL
-# 3. Inicia o Mastra Studio
-# 4. Gerencia graceful shutdown
+# 1. Verifica conexão direta com PostgreSQL (VPS)
+# 2. Inicia o Mastra Studio
+# 3. Gerencia graceful shutdown
 #
 # Uso:
 #   ./scripts/mastra-studio.sh start    # Iniciar Studio
-#   ./scripts/mastra-studio.sh stop     # Parar Studio + túnel
+#   ./scripts/mastra-studio.sh stop     # Parar Studio
 #   ./scripts/mastra-studio.sh restart  # Reiniciar
 #   ./scripts/mastra-studio.sh status   # Verificar status
 #   ./scripts/mastra-studio.sh logs     # Ver logs em tempo real
+# ============================================
+# ATUALIZAÇÃO: Conexão direta ao PostgreSQL (sem túnel SSH)
+# Data: 2026-03-12
 # ============================================
 
 set -e
@@ -31,6 +33,10 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 XPERTIA_DIR="$PROJECT_ROOT/XpertIA"
 LOG_FILE="/tmp/mastra-studio.log"
 PID_FILE="/tmp/mastra-studio.pid"
+
+# Configurações do VPS (carregadas do .env)
+VPS_IP="5.189.185.146"
+PG_PORT="5432"
 
 # Verificar se está no diretório correto
 cd "$PROJECT_ROOT"
@@ -85,55 +91,19 @@ check_dependencies() {
 }
 
 # ============================================
-# Gerenciamento do Túnel SSH
-# ============================================
-
-start_tunnel() {
-    log_info "Iniciando túnel SSH para VPS..."
-    
-    if [ -f "$SCRIPT_DIR/tunnel-vps.sh" ]; then
-        "$SCRIPT_DIR/tunnel-vps.sh" start
-    else
-        log_error "Script tunnel-vps.sh não encontrado"
-        exit 1
-    fi
-}
-
-stop_tunnel() {
-    log_info "Parando túnel SSH..."
-    
-    if [ -f "$SCRIPT_DIR/tunnel-vps.sh" ]; then
-        "$SCRIPT_DIR/tunnel-vps.sh" stop
-    fi
-}
-
-check_tunnel() {
-    if [ -f "$SCRIPT_DIR/tunnel-vps.sh" ]; then
-        "$SCRIPT_DIR/tunnel-vps.sh" status > /dev/null 2>&1
-        return $?
-    fi
-    return 1
-}
-
-# ============================================
-# Verificação do PostgreSQL
+# Verificação do PostgreSQL (Conexão Direta)
 # ============================================
 
 check_postgres() {
-    log_info "Verificando conexão com PostgreSQL..."
+    log_info "Verificando conexão com PostgreSQL ($VPS_IP:$PG_PORT)..."
     
-    # Carregar DATABASE_URL do .env
-    if [ -f "$XPERTIA_DIR/.env" ]; then
-        export $(grep -E '^DATABASE_URL=' "$XPERTIA_DIR/.env" | xargs)
-    fi
-    
-    # Tentar conectar
-    if timeout 5 bash -c "</dev/tcp/127.0.0.1/5432" 2>/dev/null; then
-        log_success "PostgreSQL acessível em localhost:5432"
+    # Tentar conectar diretamente ao VPS
+    if timeout 5 bash -c "</dev/tcp/$VPS_IP/$PG_PORT" 2>/dev/null; then
+        log_success "PostgreSQL acessível em $VPS_IP:$PG_PORT"
         return 0
     else
-        log_error "Não foi possível conectar ao PostgreSQL em localhost:5432"
-        log_info "Verifique se o túnel SSH está ativo"
+        log_error "Não foi possível conectar ao PostgreSQL em $VPS_IP:$PG_PORT"
+        log_info "Verifique se a VPS está online e a porta 5432 está liberada no firewall"
         return 1
     fi
 }
@@ -238,20 +208,12 @@ show_status() {
     echo -e "${GREEN}=== Status do XpertIA ===${NC}"
     echo ""
     
-    # Status do túnel
-    echo -n "Túnel SSH:     "
-    if timeout 2 bash -c "</dev/tcp/127.0.0.1/5432" 2>/dev/null; then
-        echo -e "${GREEN}CONECTADO${NC}"
-    else
-        echo -e "${RED}DESCONECTADO${NC}"
-    fi
-    
-    # Status do PostgreSQL
+    # Status do PostgreSQL (conexão direta)
     echo -n "PostgreSQL:    "
-    if timeout 2 bash -c "</dev/tcp/127.0.0.1/5432" 2>/dev/null; then
-        echo -e "${GREEN}ACESSÍVEL${NC}"
+    if timeout 2 bash -c "</dev/tcp/$VPS_IP/$PG_PORT" 2>/dev/null; then
+        echo -e "${GREEN}ACESSÍVEL${NC} ($VPS_IP:$PG_PORT)"
     else
-        echo -e "${RED}INACESSÍVEL${NC}"
+        echo -e "${RED}INACESSÍVEL${NC} ($VPS_IP:$PG_PORT)"
     fi
     
     # Status do Mastra
@@ -284,12 +246,12 @@ cmd_start() {
     check_dependencies
     echo ""
     
-    start_tunnel
-    echo ""
-    
     if ! check_postgres; then
         log_error "Não foi possível conectar ao PostgreSQL"
-        log_info "Verifique se o túnel SSH está configurado corretamente"
+        log_info "Verifique:"
+        log_info "  1. Se a VPS ($VPS_IP) está online"
+        log_info "  2. Se o PostgreSQL está rodando na porta $PG_PORT"
+        log_info "  3. Se o firewall permite conexões na porta $PG_PORT"
         exit 1
     fi
     echo ""
@@ -315,9 +277,6 @@ cmd_stop() {
     echo ""
     
     stop_studio
-    echo ""
-    
-    stop_tunnel
     echo ""
     
     log_success "XpertIA parado"
@@ -357,9 +316,9 @@ case "${1:-status}" in
         echo "Uso: $0 {start|stop|restart|status|logs}"
         echo ""
         echo "Comandos:"
-        echo "  start   - Inicia túnel SSH + Mastra Studio"
-        echo "  stop    - Para Mastra Studio + túnel SSH"
-        echo "  restart - Reinicia tudo"
+        echo "  start   - Inicia Mastra Studio (conexão direta ao PostgreSQL)"
+        echo "  stop    - Para Mastra Studio"
+        echo "  restart - Reinicia o Studio"
         echo "  status  - Mostra status de todos os serviços"
         echo "  logs    - Acompanha logs em tempo real"
         exit 1
