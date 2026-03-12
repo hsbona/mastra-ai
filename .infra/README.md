@@ -49,18 +49,56 @@ psql -U xpertia -d xpertia -f .infra/postgreSQL/03-pgvector-config.sql
 
 | Esquema | Propósito | Gerenciado por | Status |
 |---------|-----------|----------------|--------|
-| `mastra` | Dados do framework (storage, observability, RAG) | Mastra (automático) | Vazio - pronto |
-| `xpertia` | Dados da aplicação (KB, usuários, auditoria) | Aplicação | **Contém dados ativos** |
-| `public` | Tabelas legadas (kb_*) | Aplicação | 4 tabelas de embeddings |
+| `mastra` | Dados do **framework** (storage, observability, traces) | Mastra (automático) | Vazio - pronto |
+| `xpertia_rag` | Dados da **aplicação** gerenciados pelo Mastra (KBs, embeddings) | Mastra (via configuração) | Vazio - pronto |
+| `xpertia` | Dados da aplicação **legada** (PROTEGIDO) | Aplicação legada | **Contém dados ativos** |
+| `public` | Esquema padrão PostgreSQL | PostgreSQL | Vazio |
 
-> **⚠️ IMPORTANTE:** O esquema `xpertia` já existe e contém **dados ativos**:
-> - 64 logs de auditoria, 165 mensagens, 76 threads
-> - Estrutura completa de KB (knowledge_bases, documents, kb_embeddings)
-> - 9 enums customizados, múltiplos índices
->
-> **Ver análise detalhada:** `.infra/postgreSQL/ANALYSIS-xpertia-schema.md`
->
-> **Status:** Migração Mastra concluída. Esquema `mastra` preparado para receber tabelas do framework.
+#### 🚫 Esquema 'xpertia' - PROTEGIDO
+
+**NUNCA** use ou modifique o esquema `xpertia`. Ele contém:
+- 64 logs de auditoria, 165 mensagens, 76 threads (dados de produção)
+- Estrutura legada de KB com relacionamentos complexos
+- 9 enums customizados e dezenas de índices
+
+**Ver análise completa:** `.infra/postgreSQL/ANALYSIS-xpertia-schema.md`
+
+#### ✅ Arquitetura Recomendada
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  DADOS DO FRAMEWORK (mastra)                           │
+│  ├─ mastra_storage        (tabelas internas)           │
+│  ├─ mastra_ai_spans       (observability)              │
+│  ├─ mastra_messages       (threads do framework)       │
+│  └─ ...                                                │
+├─────────────────────────────────────────────────────────┤
+│  DADOS DA APLICAÇÃO (xpertia_rag) ← GERENCIADO PELA   │
+│  ├─ kb_legislacao         (índice vetorial)            │
+│  ├─ kb_documentos         (índice vetorial)            │
+│  └─ ...                                                │
+├─────────────────────────────────────────────────────────┤
+│  DADOS LEGADOS (xpertia) ← NÃO TOCAR!                 │
+│  ├─ audit_logs            (64 registros)               │
+│  ├─ messages              (165 registros)              │
+│  ├─ threads               (76 registros)               │
+│  └─ ...                                                │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Configuração no Código
+
+```typescript
+// 1. Storage do framework (dados internos)
+const storage = new PostgresStore({
+  schemaName: 'mastra',
+});
+
+// 2. RAG da aplicação (KBs, embeddings)
+const pgVector = new PgVector({
+  schemaName: 'xpertia_rag',  // <-- Isolado do framework!
+});
+```
 
 ### Extensões Instaladas
 
@@ -119,6 +157,7 @@ GRANT ALL PRIVILEGES ON DATABASE xpertia TO xpertia;
 \i .infra/postgreSQL/01-extensions.sql
 \i .infra/postgreSQL/02-schemas.sql
 \i .infra/postgreSQL/03-pgvector-config.sql
+\i .infra/postgreSQL/06-schema-xpertia-rag.sql
 ```
 
 ### 🔄 Migração de Ambiente Existente
@@ -126,17 +165,21 @@ GRANT ALL PRIVILEGES ON DATABASE xpertia TO xpertia;
 Se já existe um ambiente com tabelas Mastra em `public`:
 
 ```bash
-# Executar scripts 1-3 primeiro (preparação)
+# Executar scripts 1-3 e 6 primeiro (preparação)
 psql -U xpertia -d xpertia -f .infra/postgreSQL/01-extensions.sql
 psql -U xpertia -d xpertia -f .infra/postgreSQL/02-schemas.sql
 psql -U xpertia -d xpertia -f .infra/postgreSQL/03-pgvector-config.sql
+psql -U xpertia -d xpertia -f .infra/postgreSQL/06-schema-xpertia-rag.sql
 
-# ⚠️ Depois executar MIGRAÇÃO (destrói dados em public!)
+# ⚠️ Depois executar MIGRAÇÕES (destrói dados em public!)
 psql -U xpertia -d xpertia -f .infra/postgreSQL/04-migrate-mastra-to-schema.sql
+psql -U xpertia -d xpertia -f .infra/postgreSQL/05-cleanup-public.sql
 ```
 
-> **⚠️ ATENÇÃO:** O script `04-migrate-mastra-to-schema.sql` REMOVE permanentemente 
-> as tabelas do Mastra do esquema `public`. Só execute se tiver autorização explícita.
+> **⚠️ ATENÇÃO:** 
+> - `04-migrate-mastra-to-schema.sql` REMOVE tabelas do Mastra de `public`
+> - `05-cleanup-public.sql` REMOVE tabelas de desenvolvimento (kb_*)
+> Só execute se tiver autorização explícita.
 
 ---
 

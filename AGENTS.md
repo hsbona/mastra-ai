@@ -12,6 +12,7 @@ Guia para agentes de IA trabalhando neste repositório.
 | 2 | 🗑️ **Exclusão sempre via lixeira** | `trash-put` ou `gio trash` (nunca `rm`) |
 | 3 | ⚙️ **Gerenciar serviços apenas via script** | Use `./scripts/mastra-studio.sh` — nunca `kill`/`pkill` |
 | 4 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação explícita |
+| 4a| 🚫 **NUNCA usar esquema 'xpertia'** | Esquema legado protegido - contém dados de produção |
 | 5 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
 | 6 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
 | 7 | 🏗️ **`.infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `.infra/` |
