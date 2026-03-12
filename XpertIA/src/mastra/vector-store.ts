@@ -9,8 +9,8 @@ import { PgVector } from '@mastra/pg';
 
 // ============================================
 // VECTOR STORE - RAG da aplicação (KBs, embeddings)
-// Esquema: 'mastra' - conforme especificação do projeto
-// Todos os dados do framework Mastra isolados no esquema 'mastra'
+// Esquema: 'xpertia_rag' - dados da aplicação XpertIA (RAG, embeddings)
+// Separado do esquema 'mastra' que contém dados do framework
 // ============================================
 // Aumentar timeout da conexão para evitar erros em grandes upserts
 const getConnectionString = () => {
@@ -23,5 +23,5 @@ const getConnectionString = () => {
 export const pgVector = new PgVector({
   id: 'xpertia-rag',
   connectionString: getConnectionString(),
-  schemaName: 'mastra',
+  schemaName: 'xpertia_rag',
 });
