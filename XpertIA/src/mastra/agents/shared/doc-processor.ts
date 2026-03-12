@@ -7,6 +7,11 @@ import {
   writeDOCXTool, 
   writeExcelTool 
 } from '../../tools/file-tools';
+import { 
+  listWorkspaceFilesTool,
+  createDirectoryTool,
+  getFileInfoTool,
+} from '../../tools/system-tools';
 
 export const docProcessorAgent = new Agent({
   id: 'doc-processor',
@@ -52,6 +57,11 @@ ORGANIZAÇÃO:
 - Use workspace/uploads/ para arquivos de entrada
 - Use workspace/outputs/ para arquivos gerados
 - Documente o que foi processado em cada operação
+
+TOOLS DE SISTEMA DISPONÍVEIS:
+- listWorkspaceFilesTool: Liste arquivos antes de processar para confirmar existência
+- createDirectoryTool: Crie diretórios organizados para outputs
+- getFileInfoTool: Obtenha informações sobre arquivos (tamanho, datas, tipo)
 `,
   model: 'groq/llama-3.3-70b-versatile',
   tools: { 
@@ -59,7 +69,10 @@ ORGANIZAÇÃO:
     readDOCXTool, 
     readExcelTool, 
     writeDOCXTool, 
-    writeExcelTool 
+    writeExcelTool,
+    listWorkspaceFilesTool,
+    createDirectoryTool,
+    getFileInfoTool,
   },
   memory: new Memory(),
 });

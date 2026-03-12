@@ -15,6 +15,7 @@ import { xpertGovCoordinator } from './agents/xpert-gov';
 import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
 import { fileTools } from './tools/file-tools';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
+import { systemTools } from './tools/system-tools';
 
 // ============================================
 // RAG - Sistema de Retrieval-Augmented Generation
@@ -27,6 +28,7 @@ export { queryRAGTool, listIndexesTool } from './tools/rag-tools';
 // Exportar tools para uso em agentes
 export { fileTools };
 export { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool };
+export { systemTools };
 
 // Exportar agentes especializados
 export { researchAgent, docProcessorAgent, xpertGovAnalystAgent, xpertGovWriterAgent };

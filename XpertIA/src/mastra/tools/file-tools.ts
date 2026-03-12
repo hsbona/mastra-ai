@@ -35,8 +35,9 @@ export const readPDFTool = createTool({
     }),
     error: z.string().optional(),
   }),
-  execute: async ({ filePath, startPage, endPage }: { filePath: string; startPage?: number; endPage?: number }) => {
+  execute: async ({ context }) => {
     try {
+      const { filePath, startPage, endPage } = context;
       const fullPath = path.join('./workspace', filePath);
       
       // Extrair texto usando pdf2json
