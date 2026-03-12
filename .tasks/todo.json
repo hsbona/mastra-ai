@@ -9,7 +9,8 @@
     "embeddingModel": "Alibaba text-embedding-v4",
     "embeddingDimensions": 1024,
     "architecture": "Agent CoT (maxSteps=15) - sem workflow complexo",
-    "webSearch": "Tavily (free tier) ou DuckDuckGo"
+    "webSearch": "Tavily (free tier) ou DuckDuckGo",
+    "databaseSchema": "mastra - Todos os dados Mastra isolados no esquema 'mastra' (storage, observability, RAG)"
   },
   "tasks": [
     {
@@ -100,7 +101,7 @@
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Extrai texto de PDFs",
         "Suporta seleção de páginas",
@@ -120,7 +121,7 @@
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Extrai texto mantendo estrutura",
         "Extrai headings/estilos",
@@ -140,7 +141,7 @@
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Lê múltiplas sheets",
         "Retorna dados como array de objetos",
@@ -160,7 +161,7 @@
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Cria DOCX com conteúdo formatado",
         "Suporta headings e estilos básicos",
@@ -180,7 +181,7 @@
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Cria XLSX a partir de array de objetos",
         "Nomeia sheets personalizavelmente",

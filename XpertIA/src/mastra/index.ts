@@ -7,6 +7,10 @@ import { weatherWorkflow } from './workflows/weather-workflow';
 import { weatherAgent } from './agents/weather-agent';
 import { conversationalAgent } from './agents/conversational-agent';
 import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
+import { fileTools } from './tools/file-tools';
+
+// Exportar tools para uso em agentes
+export { fileTools };
 
 const workspace = new Workspace({
   name: 'xpertia-workspace',
@@ -23,7 +27,7 @@ export const mastra = new Mastra({
   storage: new PostgresStore({
     id: "mastra-storage",
     connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',
-    // stores observability, scores, ... into PostgreSQL
+    schemaName: 'mastra', // All Mastra data persisted in 'mastra' schema (isolated from application data)
   }),
   logger: new PinoLogger({
     name: 'Mastra',

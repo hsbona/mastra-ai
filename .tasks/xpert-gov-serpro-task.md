@@ -17,6 +17,7 @@ Este diretório contém o plano de tarefas para o MVP do Xpert-Gov.
 | **Arquitetura Principal** | **Agent CoT** (Chain of Thought) com `maxSteps=15` |
 | **Workflows** | Não será usado no MVP (CoT é suficiente) |
 | **Web Search** | Tavily (free tier) ou DuckDuckGo como fallback |
+| **Database Schema** | **Esquema `mastra`** - Todos os dados persistidos pelo Mastra (storage, observability, RAG) são isolados no esquema `mastra`, separados dos dados da aplicação no esquema `public` ou `xpertia` |
 
 ## 🗓️ Cronograma de Sprints
 
