@@ -131,9 +131,42 @@ UNION ALL SELECT 'threads', COUNT(*) FROM xpertia.threads;
 
 ---
 
+## Comportamento do Mastra ao Iniciar
+
+### PostgresStore (esquema 'mastra')
+
+| Situação | Comportamento |
+|----------|---------------|
+| Tabelas não existem | ✅ Cria automaticamente ao iniciar |
+| Tabelas existem | ✅ Usa existentes (não sobrescreve) |
+| Dados existem | ✅ Preservados (CREATE TABLE IF NOT EXISTS) |
+
+**Tabelas criadas:** `mastra_threads`, `mastra_messages`, `mastra_ai_spans`, etc.
+
+### PgVector (esquema 'xpertia_rag')
+
+| Situação | Comportamento |
+|----------|---------------|
+| Inicialização | ❌ NÃO cria tabelas automaticamente |
+| `createIndex()` chamado | ✅ Cria tabela para o índice |
+| Índice já existe | ✅ Usa existente (não sobrescreve) |
+
+**Tabelas criadas:** Sob demanda via `createIndex()` (ex: `kb_legislacao`)
+
+### Resumo de Segurança
+
+```
+✅ Idempotente: Pode executar múltiplas vezes sem perder dados
+✅ Não-destrutivo: Nunca sobrescreve tabelas ou dados existentes
+✅ Incremental: Novas tabelas são adicionadas conforme necessário
+```
+
+---
+
 ## Conclusão
 
 ✅ **Arquitetura definida**: Separação de esquemas (mastra + xpertia_rag)  
 ✅ **Banco preparado**: Scripts executados, esquemas criados  
 ✅ **Dados legados preservados**: Esquema 'xpertia' intacto  
-✅ **Pronto para implementação**: Configuração no index.ts
+✅ **Pronto para implementação**: Configuração no index.ts  
+✅ **Comportamento documentado**: Mastra é idempotente e seguro

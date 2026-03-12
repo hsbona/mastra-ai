@@ -84,7 +84,10 @@ export const mastra = new Mastra({
 });
 ```
 
-> O Mastra criará automaticamente as tabelas em cada esquema ao iniciar.
+> **Comportamento:**
+> - **Esquema 'mastra'**: Mastra cria tabelas automaticamente ao iniciar (se não existirem)
+> - **Esquema 'xpertia_rag'**: Tabelas criadas sob demanda via `pgVector.createIndex()`
+> - **Segurança**: Nunca sobrescreve dados existentes (usa CREATE TABLE IF NOT EXISTS)
 
 ---
 

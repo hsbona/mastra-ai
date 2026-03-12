@@ -67,21 +67,47 @@ WHERE schema_name IN ('mastra', 'xpertia_rag', 'xpertia')
 ORDER BY check_item;
 
 -- ============================================
--- 4. CONFIGURAÇÃO RECOMENDADA (documentação)
+-- 4. COMPORTAMENTO DO MASTRA
+-- ============================================
+--
+-- O QUE O SCRIPT SQL FAZ:
+--   - Instala extensões PostgreSQL (vector, uuid-ossp, etc.)
+--   - Cria esquemas vazios (mastra, xpertia_rag, xpertia)
+--
+-- O QUE O MASTRA FAZ AO INICIAR:
+--   - PostgresStore(schemaName: 'mastra'):
+--     * Cria automaticamente tabelas no esquema 'mastra'
+--     * Usa CREATE TABLE IF NOT EXISTS (não sobrescreve dados)
+--     * Tabelas: mastra_threads, mastra_messages, mastra_ai_spans, etc.
+--
+--   - PgVector(schemaName: 'xpertia_rag'):
+--     * NÃO cria tabelas automaticamente no início
+--     * Cria tabelas apenas quando createIndex() é chamado explicitamente
+--     * Também usa CREATE TABLE IF NOT EXISTS
+--     * Tabelas: criadas sob demanda (ex: kb_legislacao)
+--
+-- SEGURANÇA DOS DADOS:
+--   ✅ SE tabelas não existem → Mastra as cria
+--   ✅ SE tabelas existem → Mastra USA as existentes (não sobrescreve)
+--   ✅ Dados existentes são PRESERVADOS
+--
+-- ============================================
+-- 5. CONFIGURAÇÃO NO CÓDIGO
 -- ============================================
 /*
 
-NO CÓDIGO (src/mastra/index.ts):
-
+// src/mastra/index.ts
 import { PostgresStore, PgVector } from '@mastra/pg';
 
 // Storage do framework → esquema 'mastra'
+// (cria tabelas automaticamente ao iniciar)
 const storage = new PostgresStore({
   connectionString: process.env.DATABASE_URL,
   schemaName: 'mastra',
 });
 
 // RAG da aplicação → esquema 'xpertia_rag'
+// (tabelas criadas sob demanda via createIndex())
 const pgVector = new PgVector({
   id: 'xpertia-rag',
   connectionString: process.env.DATABASE_URL,
@@ -94,7 +120,11 @@ export const mastra = new Mastra({
   // ... outras configurações
 });
 
-O Mastra criará automaticamente as tabelas necessárias 
-em cada esquema quando iniciar pela primeira vez.
+// Criar índice vetorial (exemplo):
+// await pgVector.createIndex({
+//   indexName: 'kb_legislacao',
+//   dimension: 1024,
+//   metric: 'cosine',
+// });
 
 */
