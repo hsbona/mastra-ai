@@ -1,6 +1,7 @@
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
-import { PostgresStore, PgVector } from '@mastra/pg';
+import { PostgresStore } from '@mastra/pg';
+import { pgVector } from './vector-store';
 import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } from '@mastra/observability';
 import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
 import { weatherWorkflow } from './workflows/weather-workflow';
@@ -14,6 +15,14 @@ import { xpertGovCoordinator } from './agents/xpert-gov';
 import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
 import { fileTools } from './tools/file-tools';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
+
+// ============================================
+// RAG - Sistema de Retrieval-Augmented Generation
+// ============================================
+export * from './rag';
+
+// Exportar RAG tools
+export { queryRAGTool, listIndexesTool } from './tools/rag-tools';
 
 // Exportar tools para uso em agentes
 export { fileTools };
@@ -45,15 +54,7 @@ const storage = new PostgresStore({
   schemaName: 'mastra',
 });
 
-// ============================================
-// VECTOR STORE - RAG da aplicação (KBs, embeddings)
-// Esquema: 'xpertia_rag' - isolado do framework
-// ============================================
-export const pgVector = new PgVector({
-  id: 'xpertia-rag',
-  connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',
-  schemaName: 'xpertia_rag',
-});
+// pgVector é importado de './vector-store' para evitar ciclos de dependência
 
 // ============================================
 // MASTRA INSTANCE
