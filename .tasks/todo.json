@@ -21,7 +21,7 @@
       "dependencies": [],
       "parallelizable": false,
       "estimatedHours": 2,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Pasta agents/xpert-gov/ criada",
         "Pasta agents/shared/ criada",
@@ -36,10 +36,12 @@
       "title": "Adicionar dependências de arquivo",
       "description": "Instalar pdf-lib, xlsx, docx, mammoth para processamento de arquivos",
       "priority": "high",
-      "dependencies": ["S1-001"],
+      "dependencies": [
+        "S1-001"
+      ],
       "parallelizable": false,
       "estimatedHours": 2,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "pdf-lib instalado",
         "xlsx (SheetJS) instalado",
@@ -55,10 +57,12 @@
       "title": "Configurar Workspace Mastra",
       "description": "Configurar LocalFilesystem e LocalSandbox no index.ts para área de trabalho persistente",
       "priority": "high",
-      "dependencies": ["S1-002"],
+      "dependencies": [
+        "S1-002"
+      ],
       "parallelizable": false,
       "estimatedHours": 4,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Workspace configurado com basePath './workspace'",
         "LocalFilesystem configurado",
@@ -72,24 +76,27 @@
       "title": "Verificar PostgreSQL + pgvector",
       "description": "Testar conexão com PostgreSQL via túnel e verificar extensão pgvector",
       "priority": "high",
-      "dependencies": ["S1-001"],
+      "dependencies": [
+        "S1-001"
+      ],
       "parallelizable": false,
       "estimatedHours": 2,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Conexão DATABASE_URL funcionando",
         "Extensão pgvector habilitada no banco",
         "Teste de criação de tabela vetorial passando"
       ]
     },
-
     {
       "id": "S2-001",
       "sprint": 2,
       "title": "Implementar readPDFTool (pdf-lib)",
       "description": "Tool para extrair texto de PDFs usando pdf-lib",
       "priority": "high",
-      "dependencies": ["S1-003"],
+      "dependencies": [
+        "S1-003"
+      ],
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
@@ -107,7 +114,9 @@
       "title": "Implementar readDOCXTool (mammoth)",
       "description": "Tool para ler documentos Word usando mammoth",
       "priority": "high",
-      "dependencies": ["S1-003"],
+      "dependencies": [
+        "S1-003"
+      ],
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
@@ -125,7 +134,9 @@
       "title": "Implementar readExcelTool (xlsx)",
       "description": "Tool para ler planilhas XLSX e CSV usando xlsx",
       "priority": "high",
-      "dependencies": ["S1-003"],
+      "dependencies": [
+        "S1-003"
+      ],
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
@@ -143,7 +154,9 @@
       "title": "Implementar writeDOCXTool (docx)",
       "description": "Tool para criar documentos Word usando docx",
       "priority": "high",
-      "dependencies": ["S1-003"],
+      "dependencies": [
+        "S1-003"
+      ],
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
@@ -161,7 +174,9 @@
       "title": "Implementar writeExcelTool (xlsx)",
       "description": "Tool para criar planilhas XLSX usando xlsx",
       "priority": "high",
-      "dependencies": ["S1-003"],
+      "dependencies": [
+        "S1-003"
+      ],
       "parallelizable": true,
       "group": "file-tools",
       "estimatedHours": 6,
@@ -173,14 +188,15 @@
         "Suporta múltiplas sheets"
       ]
     },
-
     {
       "id": "S3-001",
       "sprint": 3,
       "title": "Implementar webSearchTool (Tavily/DuckDuckGo)",
       "description": "Tool de pesquisa web usando Tavily (free tier) ou DuckDuckGo scraping",
       "priority": "high",
-      "dependencies": ["S1-003"],
+      "dependencies": [
+        "S1-003"
+      ],
       "parallelizable": true,
       "group": "web-tools",
       "estimatedHours": 6,
@@ -198,7 +214,9 @@
       "title": "Implementar fetchURLTool",
       "description": "Tool para extrair conteúdo textual de páginas web",
       "priority": "high",
-      "dependencies": ["S1-003"],
+      "dependencies": [
+        "S1-003"
+      ],
       "parallelizable": true,
       "group": "web-tools",
       "estimatedHours": 4,
@@ -216,7 +234,9 @@
       "title": "Implementar summarizeContentTool",
       "description": "Tool para sumarização de conteúdo usando LLM (Groq)",
       "priority": "high",
-      "dependencies": ["S1-003"],
+      "dependencies": [
+        "S1-003"
+      ],
       "parallelizable": true,
       "group": "analysis-tools",
       "estimatedHours": 4,
@@ -234,7 +254,9 @@
       "title": "Implementar calculateTool",
       "description": "Tool para cálculos matemáticos usando mathjs",
       "priority": "medium",
-      "dependencies": ["S1-003"],
+      "dependencies": [
+        "S1-003"
+      ],
       "parallelizable": true,
       "group": "analysis-tools",
       "estimatedHours": 4,
@@ -246,14 +268,17 @@
         "Trata erros de sintaxe"
       ]
     },
-
     {
       "id": "S4-001",
       "sprint": 4,
       "title": "Criar research agent (shared)",
       "description": "Subagente especializado em pesquisa web e sumarização (agents/shared/)",
       "priority": "high",
-      "dependencies": ["S3-001", "S3-002", "S3-003"],
+      "dependencies": [
+        "S3-001",
+        "S3-002",
+        "S3-003"
+      ],
       "parallelizable": true,
       "group": "agents",
       "estimatedHours": 6,
@@ -271,7 +296,13 @@
       "title": "Criar doc-processor agent (shared)",
       "description": "Subagente especializado em processamento de arquivos (agents/shared/)",
       "priority": "high",
-      "dependencies": ["S2-001", "S2-002", "S2-003", "S2-004", "S2-005"],
+      "dependencies": [
+        "S2-001",
+        "S2-002",
+        "S2-003",
+        "S2-004",
+        "S2-005"
+      ],
       "parallelizable": true,
       "group": "agents",
       "estimatedHours": 6,
@@ -289,7 +320,10 @@
       "title": "Criar xpert-gov analyst",
       "description": "Subagente especializado em análise de dados governamentais (agents/xpert-gov/)",
       "priority": "high",
-      "dependencies": ["S2-003", "S3-004"],
+      "dependencies": [
+        "S2-003",
+        "S3-004"
+      ],
       "parallelizable": true,
       "group": "agents",
       "estimatedHours": 6,
@@ -307,7 +341,10 @@
       "title": "Criar xpert-gov writer",
       "description": "Subagente especializado em redação gov (ofícios, memorandos) (agents/xpert-gov/)",
       "priority": "high",
-      "dependencies": ["S2-002", "S2-004"],
+      "dependencies": [
+        "S2-002",
+        "S2-004"
+      ],
       "parallelizable": true,
       "group": "agents",
       "estimatedHours": 6,
@@ -319,14 +356,18 @@
         "Suporta diferentes estilos (ofício, memo, relatório)"
       ]
     },
-
     {
       "id": "S5-001",
       "sprint": 5,
       "title": "Criar xpert-gov coordinator com CoT",
       "description": "Agente coordenador com arquitetura Chain of Thought (maxSteps=15)",
       "priority": "high",
-      "dependencies": ["S4-001", "S4-002", "S4-003", "S4-004"],
+      "dependencies": [
+        "S4-001",
+        "S4-002",
+        "S4-003",
+        "S4-004"
+      ],
       "parallelizable": false,
       "estimatedHours": 10,
       "status": "pending",
@@ -343,7 +384,9 @@
       "title": "Configurar subagentes no coordinator",
       "description": "Registrar todos os subagentes no xpert-gov (agents: { ... })",
       "priority": "high",
-      "dependencies": ["S5-001"],
+      "dependencies": [
+        "S5-001"
+      ],
       "parallelizable": false,
       "estimatedHours": 4,
       "status": "pending",
@@ -360,7 +403,9 @@
       "title": "Implementar sistema de delegação CoT",
       "description": "Configurar o coordinator para delegar tasks aos subagentes via tool calls",
       "priority": "high",
-      "dependencies": ["S5-002"],
+      "dependencies": [
+        "S5-002"
+      ],
       "parallelizable": false,
       "estimatedHours": 8,
       "status": "pending",
@@ -371,14 +416,15 @@
         "Teste de fluxo multi-agente passando"
       ]
     },
-
     {
       "id": "S6-001",
       "sprint": 6,
       "title": "Configurar PgVector com text-embedding-v4 (1024d)",
       "description": "Configurar PgVector para embeddings com Alibaba text-embedding-v4",
       "priority": "high",
-      "dependencies": ["S1-004"],
+      "dependencies": [
+        "S1-004"
+      ],
       "parallelizable": false,
       "estimatedHours": 6,
       "status": "pending",
@@ -395,7 +441,9 @@
       "title": "Implementar document loader + chunking",
       "description": "Sistema para carregar documentos e dividir em chunks para RAG",
       "priority": "high",
-      "dependencies": ["S6-001"],
+      "dependencies": [
+        "S6-001"
+      ],
       "parallelizable": false,
       "estimatedHours": 8,
       "status": "pending",
@@ -412,7 +460,9 @@
       "title": "Criar queryRAG tool",
       "description": "Tool para consultar base de conhecimento vetorial",
       "priority": "high",
-      "dependencies": ["S6-002"],
+      "dependencies": [
+        "S6-002"
+      ],
       "parallelizable": false,
       "estimatedHours": 6,
       "status": "pending",
@@ -429,7 +479,9 @@
       "title": "Integrar RAG ao research-agent",
       "description": "Adicionar capacidade de consulta RAG ao agente de pesquisa",
       "priority": "high",
-      "dependencies": ["S6-002"],
+      "dependencies": [
+        "S6-002"
+      ],
       "parallelizable": false,
       "estimatedHours": 6,
       "status": "pending",
@@ -446,7 +498,9 @@
       "title": "Criar base de conhecimento inicial",
       "description": "Indexar legislação básica para governo federal",
       "priority": "medium",
-      "dependencies": ["S6-002"],
+      "dependencies": [
+        "S6-002"
+      ],
       "parallelizable": false,
       "estimatedHours": 8,
       "status": "pending",
@@ -458,60 +512,105 @@
       ]
     }
   ],
-
   "parallelGroups": {
     "S2-file-tools": {
       "description": "Tools de arquivo podem ser desenvolvidas em paralelo",
-      "tasks": ["S2-001", "S2-002", "S2-003", "S2-004", "S2-005"],
+      "tasks": [
+        "S2-001",
+        "S2-002",
+        "S2-003",
+        "S2-004",
+        "S2-005"
+      ],
       "sprint": 2
     },
     "S3-web-analysis": {
       "description": "Tools de web e análise podem ser desenvolvidas em paralelo",
-      "tasks": ["S3-001", "S3-002", "S3-003", "S3-004"],
+      "tasks": [
+        "S3-001",
+        "S3-002",
+        "S3-003",
+        "S3-004"
+      ],
       "sprint": 3
     },
     "S4-agents": {
       "description": "Os 4 subagentes podem ser desenvolvidos em paralelo",
-      "tasks": ["S4-001", "S4-002", "S4-003", "S4-004"],
+      "tasks": [
+        "S4-001",
+        "S4-002",
+        "S4-003",
+        "S4-004"
+      ],
       "sprint": 4
     }
   },
-
   "milestones": [
     {
       "name": "Fundação Completa",
       "sprint": 1,
-      "tasks": ["S1-001", "S1-002", "S1-003", "S1-004"],
+      "tasks": [
+        "S1-001",
+        "S1-002",
+        "S1-003",
+        "S1-004"
+      ],
       "deliverable": "Estrutura de pastas, dependências e Workspace configurados"
     },
     {
       "name": "Tools de Arquivo Prontas",
       "sprint": 2,
-      "tasks": ["S2-001", "S2-002", "S2-003", "S2-004", "S2-005"],
+      "tasks": [
+        "S2-001",
+        "S2-002",
+        "S2-003",
+        "S2-004",
+        "S2-005"
+      ],
       "deliverable": "Leitura e escrita de PDF, DOCX, XLSX funcionando"
     },
     {
       "name": "Pesquisa e Análise",
       "sprint": 3,
-      "tasks": ["S3-001", "S3-002", "S3-003", "S3-004"],
+      "tasks": [
+        "S3-001",
+        "S3-002",
+        "S3-003",
+        "S3-004"
+      ],
       "deliverable": "Web search, fetch URL e sumarização operacionais"
     },
     {
       "name": "Subagentes Criados",
       "sprint": 4,
-      "tasks": ["S4-001", "S4-002", "S4-003", "S4-004"],
+      "tasks": [
+        "S4-001",
+        "S4-002",
+        "S4-003",
+        "S4-004"
+      ],
       "deliverable": "4 subagentes especializados (2 shared, 2 gov)"
     },
     {
       "name": "Coordinator CoT",
       "sprint": 5,
-      "tasks": ["S5-001", "S5-002", "S5-003"],
+      "tasks": [
+        "S5-001",
+        "S5-002",
+        "S5-003"
+      ],
       "deliverable": "xpert-gov com orquestração CoT funcionando"
     },
     {
       "name": "RAG Implementado",
       "sprint": 6,
-      "tasks": ["S6-001", "S6-002", "S6-003", "S6-004", "S6-005"],
+      "tasks": [
+        "S6-001",
+        "S6-002",
+        "S6-003",
+        "S6-004",
+        "S6-005"
+      ],
       "deliverable": "Sistema RAG com text-embedding-v4 e base legislativa"
     }
   ]

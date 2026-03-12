@@ -2,15 +2,24 @@ import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { PostgresStore } from '@mastra/pg';
 import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } from '@mastra/observability';
+import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
 import { weatherWorkflow } from './workflows/weather-workflow';
 import { weatherAgent } from './agents/weather-agent';
 import { conversationalAgent } from './agents/conversational-agent';
 import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
 
+const workspace = new Workspace({
+  name: 'xpertia-workspace',
+  storage: new LocalFilesystem({
+    basePath: './workspace',
+  }),
+});
+
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
   agents: { weatherAgent, conversationalAgent },
   scorers: { toolCallAppropriatenessScorer, completenessScorer, translationScorer },
+  workspace,
   storage: new PostgresStore({
     id: "mastra-storage",
     connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',

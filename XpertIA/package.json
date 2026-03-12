@@ -24,6 +24,12 @@
     "@mastra/memory": "^1.7.0",
     "@mastra/observability": "^1.4.0",
     "@mastra/pg": "^1.0.0",
+    "@mastra/rag": "^2.1.2",
+    "docx": "^9.6.1",
+    "mammoth": "^1.11.0",
+    "mathjs": "^15.1.1",
+    "pdf-lib": "^1.17.1",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
