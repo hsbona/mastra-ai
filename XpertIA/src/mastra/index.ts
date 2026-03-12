@@ -6,6 +6,10 @@ import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
 import { weatherWorkflow } from './workflows/weather-workflow';
 import { weatherAgent } from './agents/weather-agent';
 import { conversationalAgent } from './agents/conversational-agent';
+import { researchAgent } from './agents/shared/research';
+import { docProcessorAgent } from './agents/shared/doc-processor';
+import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
+import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
 import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
 import { fileTools } from './tools/file-tools';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
@@ -13,6 +17,9 @@ import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from
 // Exportar tools para uso em agentes
 export { fileTools };
 export { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool };
+
+// Exportar agentes especializados
+export { researchAgent, docProcessorAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
 
 // ============================================
 // WORKSPACE - Área de trabalho persistente
@@ -49,7 +56,14 @@ export const pgVector = new PgVector({
 // ============================================
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
-  agents: { weatherAgent, conversationalAgent },
+  agents: { 
+    weatherAgent, 
+    conversationalAgent,
+    researchAgent,
+    docProcessorAgent,
+    xpertGovAnalystAgent,
+    xpertGovWriterAgent,
+  },
   scorers: { toolCallAppropriatenessScorer, completenessScorer, translationScorer },
   workspace,
   storage,
