@@ -47,14 +47,20 @@ psql -U xpertia -d xpertia -f .infra/postgreSQL/03-pgvector-config.sql
 
 ### Esquemas
 
-| Esquema | Propósito | Gerenciado por |
-|---------|-----------|----------------|
-| `mastra` | Dados do framework (storage, observability, RAG) | Mastra (automático) |
-| `xpertia` | Dados da aplicação (knowledge base, documentos) | Aplicação |
-| `public` | Objetos da aplicação (tabelas kb_*) | Aplicação |
+| Esquema | Propósito | Gerenciado por | Status |
+|---------|-----------|----------------|--------|
+| `mastra` | Dados do framework (storage, observability, RAG) | Mastra (automático) | Vazio - pronto |
+| `xpertia` | Dados da aplicação (KB, usuários, auditoria) | Aplicação | **Contém dados ativos** |
+| `public` | Tabelas legadas (kb_*) | Aplicação | 4 tabelas de embeddings |
 
-> **Status:** Migração concluída. Tabelas do Mastra removidas de `public` e 
-> esquema `mastra` preparado para receber novas tabelas.
+> **⚠️ IMPORTANTE:** O esquema `xpertia` já existe e contém **dados ativos**:
+> - 64 logs de auditoria, 165 mensagens, 76 threads
+> - Estrutura completa de KB (knowledge_bases, documents, kb_embeddings)
+> - 9 enums customizados, múltiplos índices
+>
+> **Ver análise detalhada:** `.infra/postgreSQL/ANALYSIS-xpertia-schema.md`
+>
+> **Status:** Migração Mastra concluída. Esquema `mastra` preparado para receber tabelas do framework.
 
 ### Extensões Instaladas
 
