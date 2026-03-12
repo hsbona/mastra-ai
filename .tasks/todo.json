@@ -201,7 +201,7 @@
       "parallelizable": true,
       "group": "web-tools",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Realiza buscas na web",
         "Retorna título, URL e snippet",
@@ -221,7 +221,7 @@
       "parallelizable": true,
       "group": "web-tools",
       "estimatedHours": 4,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Extrai texto limpo de HTML",
         "Extrai título e meta tags",
@@ -241,7 +241,7 @@
       "parallelizable": true,
       "group": "analysis-tools",
       "estimatedHours": 4,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Sumariza textos longos",
         "Suporta estilos: executive, detailed, bullet",
@@ -261,7 +261,7 @@
       "parallelizable": true,
       "group": "analysis-tools",
       "estimatedHours": 4,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Avalia expressões matemáticas",
         "Suporta variáveis",
@@ -283,7 +283,7 @@
       "parallelizable": true,
       "group": "agents",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Agente em agents/shared/research.ts",
         "Instructions detalhadas para pesquisa",
@@ -307,7 +307,7 @@
       "parallelizable": true,
       "group": "agents",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Agente em agents/shared/doc-processor.ts",
         "Todas tools de arquivo vinculadas",
@@ -328,7 +328,7 @@
       "parallelizable": true,
       "group": "agents",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Agente em agents/xpert-gov/analyst.ts",
         "Instructions focadas em dados gov (despesas, licitações)",
@@ -349,7 +349,7 @@
       "parallelizable": true,
       "group": "agents",
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Agente em agents/xpert-gov/writer.ts",
         "Instructions para documentos oficiais gov",
@@ -371,7 +371,7 @@
       ],
       "parallelizable": false,
       "estimatedHours": 10,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Agente em agents/xpert-gov/index.ts",
         "Instructions CoT detalhadas (6 passos)",
@@ -390,7 +390,7 @@
       ],
       "parallelizable": false,
       "estimatedHours": 4,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "research registrado",
         "doc-processor registrado",
@@ -409,7 +409,7 @@
       ],
       "parallelizable": false,
       "estimatedHours": 8,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Coordinator consegue chamar subagentes",
         "Delegação baseada em intenção do usuário",
@@ -428,7 +428,7 @@
       ],
       "parallelizable": false,
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "PgVector configurado no index.ts",
         "Dimensão 1024 configurada",
@@ -447,7 +447,7 @@
       ],
       "parallelizable": false,
       "estimatedHours": 8,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Loader para PDF, DOCX, TXT",
         "Chunking por parágrafos/tamanho",
@@ -466,7 +466,7 @@
       ],
       "parallelizable": false,
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Busca semântica por similaridade",
         "Retorna top-K chunks relevantes",
@@ -485,7 +485,7 @@
       ],
       "parallelizable": false,
       "estimatedHours": 6,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Research-agent usa queryRAG tool",
         "Prioriza RAG sobre web quando apropriado",
@@ -504,7 +504,7 @@
       ],
       "parallelizable": false,
       "estimatedHours": 8,
-      "status": "pending",
+      "status": "done",
       "acceptanceCriteria": [
         "Lei 8.112/1990 (RJU) indexada",
         "Lei 14.133/2021 (Licitações) indexada",

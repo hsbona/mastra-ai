@@ -8,9 +8,11 @@ import { weatherAgent } from './agents/weather-agent';
 import { conversationalAgent } from './agents/conversational-agent';
 import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
 import { fileTools } from './tools/file-tools';
+import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
 
 // Exportar tools para uso em agentes
 export { fileTools };
+export { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool };
 
 // ============================================
 // WORKSPACE - Área de trabalho persistente
