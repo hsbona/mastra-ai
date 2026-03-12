@@ -21,14 +21,14 @@ Este diretório contém o plano de tarefas para o MVP do Xpert-Gov.
 
 ## 🗓️ Cronograma de Sprints
 
-| Sprint | Período | Foco | Tarefas | Milestone |
-|--------|---------|------|---------|-----------|
-| 1 | Semanas 1-2 | Fundação | 4 | Fundação Completa |
-| 2 | Semanas 3-4 | Tools de Arquivo | 5 | Tools de Arquivo Prontas |
-| 3 | Semanas 5-6 | Web e Análise | 4 | Pesquisa e Análise |
-| 4 | Semanas 7-8 | Subagentes | 4 | Subagentes Criados |
-| 5 | Semanas 9-10 | Coordinator CoT | 3 | Coordinator CoT |
-| 6 | Semanas 11-12 | RAG | 5 | RAG Implementado |
+| Sprint | Período | Foco | Tarefas | Milestone | Status |
+|--------|---------|------|---------|-----------|--------|
+| 1 | Semanas 1-2 | Fundação | 4 | Fundação Completa | ✅ Done |
+| 2 | Semanas 3-4 | Tools de Arquivo | 5 | Tools de Arquivo Prontas | ✅ Done |
+| 3 | Semanas 5-6 | Web e Análise | 4 | Pesquisa e Análise | 🔄 Next |
+| 4 | Semanas 7-8 | Subagentes | 4 | Subagentes Criados | ⏳ Pending |
+| 5 | Semanas 9-10 | Coordinator CoT | 3 | Coordinator CoT | ⏳ Pending |
+| 6 | Semanas 11-12 | RAG | 5 | RAG Implementado | ⏳ Pending |
 
 ## 📁 Estrutura de Pastas do Projeto
 
