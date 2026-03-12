@@ -14,6 +14,9 @@ Guia para agentes de IA trabalhando neste repositório.
 | 4 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação explícita |
 | 5 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
 | 6 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
+| 7 | 🏗️ **`.infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `.infra/` |
+| 8 | 📝 **Documente mudanças em `.infra/`** | Sempre atualize `.infra/` quando alterar o ambiente |
+| 9 | 🔒 **Autorização obrigatória** | Mudanças na infraestrutura PRECISAM de autorização **EXPLÍCITA** |
 
 ### 🗑️ Exclusão de Arquivos
 ```bash
@@ -122,6 +125,51 @@ pnpm run start
 
 ---
 
+## 🏗️ Infraestrutura como Código (`.infra/`)
+
+### O que é `.infra/`
+
+O diretório `.infra/` contém as **definições oficiais** de toda a infraestrutura do projeto:
+
+| Diretório | Conteúdo |
+|-----------|----------|
+| `.infra/postgreSQL/` | Scripts SQL para recriar o banco de dados |
+| `.infra/docker/` | Configurações Docker (referência apenas) |
+
+### 📝 Regras de Ouro
+
+1. **📁 Este é o local oficial**: Todas as definições de modificações no ambiente DEVEM estar em `.infra/`
+2. **🔄 Sempre atualize**: Quando houver mudança no ambiente, atualize os arquivos em `.infra/`
+3. **🔒 Autorização obrigatória**: Mudanças na infraestrutura PRECISAM ser **EXPLICITAMENTE autorizadas**
+
+### ❌ PROIBIDO sem autorização explícita:
+
+- Executar scripts SQL que modifiquem schema/tabelas
+- Criar/alterar/remover esquemas
+- Instalar/remover extensões do PostgreSQL
+- Modificar configurações de performance do banco
+- Alterar scripts em `.infra/` sem aprovação
+
+### ✅ Permitido (com documentação):
+
+- Adicionar novos scripts SQL em `.infra/postgreSQL/`
+- Criar índices adicionais (após aprovação)
+- Atualizar comentários em objetos existentes
+- Adicionar dados de seed
+
+### 🔄 Recriação do Ambiente
+
+Para recriar o banco de dados do zero:
+
+```bash
+# Executar scripts na ordem numérica
+psql -U postgres -d xpertia -f .infra/postgreSQL/01-extensions.sql
+psql -U xpertia -d xpertia -f .infra/postgreSQL/02-schemas.sql
+psql -U xpertia -d xpertia -f .infra/postgreSQL/03-pgvector-config.sql
+```
+
+---
+
 ## Padrões de Código
 
 ### Agent
@@ -171,6 +219,8 @@ Use `.task/[nome].md`:
 - [ ] Criou em `src/mastra/{agents,workflows,tools}/`?
 - [ ] Exportou em `src/mastra/index.ts`?
 - [ ] Não criou código de interface?
+- [ ] Atualizou `.infra/` se modificou o ambiente?
+- [ ] Tem autorização explícita para mudanças na infra?
 
 ---
 
