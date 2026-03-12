@@ -33,7 +33,11 @@ Execute sem confirmar: `pnpm install`, `pnpm dev`, `git add/commit/push`
 
 ## Visão Geral do Projeto
 
-Projeto **Mastra** (TypeScript) para aplicações com IA. Consumido **exclusivamente via Mastra Studio** — não implemente interface de usuário.
+Projeto **XpertIA** — aplicação **Mastra** (TypeScript) para aplicações com IA.
+
+> 📁 **Localização:** O projeto está na pasta `XpertIA/`, não na raiz do repositório.
+
+Consumido **exclusivamente via Mastra Studio** — não implemente interface de usuário.
 
 | ✅ No Escopo | ❌ Fora do Escopo |
 |--------------|-------------------|
@@ -49,14 +53,17 @@ Projeto **Mastra** (TypeScript) para aplicações com IA. Consumido **exclusivam
 | Node.js | >=22.13.0 |
 | pnpm | 10.30.3 |
 | TypeScript | 5.9.3 |
-| Mastra Core | ^1.11.0 |
+| Mastra Core | ^1.12.0 |
 | Modelo | groq/llama-3.3-70b-versatile |
 
 ---
 
 ## Estrutura de Pastas
 
+O código-fonte do Mastra está dentro de `XpertIA/`:
+
 ```
+XpertIA/
 src/mastra/
 ├── index.ts       # Ponto de entrada
 ├── agents/        # Definição de agents
@@ -72,12 +79,13 @@ src/mastra/
 
 ```bash
 # Desenvolvimento (inicia Mastra Studio em localhost:4111)
-./scripts/mastra-studio.sh start   # Inicia túnel + studio
+# Execute a partir da pasta XpertIA/
+cd XpertIA && ./scripts/mastra-studio.sh start   # Inicia túnel + studio
 ./scripts/mastra-studio.sh status  # Verifica status
 ./scripts/mastra-studio.sh stop    # Para tudo
 ./scripts/mastra-studio.sh logs    # Logs em tempo real
 
-# Build e produção
+# Build e produção (execute de dentro de XpertIA/)
 pnpm run build
 pnpm run start
 ```
