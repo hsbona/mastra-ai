@@ -53,6 +53,10 @@ psql -U xpertia -d xpertia -f .infra/postgreSQL/03-pgvector-config.sql
 | `xpertia` | Dados da aplicação (knowledge base, documentos) | Aplicação |
 | `public` | Objetos compartilhados (minimizado) | PostgreSQL |
 
+> **Nota de Migração:** As tabelas do Mastra atualmente estão no esquema `public`. 
+> Ao reiniciar com `schemaName: 'mastra'`, o Mastra criará novas tabelas no esquema `mastra`.
+> Os dados históricos permanecem em `public` até migração manual (se necessário).
+
 ### Extensões Instaladas
 
 | Extensão | Versão | Propósito |
