@@ -1,6 +1,6 @@
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
-import { PostgresStore } from '@mastra/pg';
+import { PostgresStore, PgVector } from '@mastra/pg';
 import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } from '@mastra/observability';
 import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
 import { weatherWorkflow } from './workflows/weather-workflow';
@@ -12,6 +12,9 @@ import { fileTools } from './tools/file-tools';
 // Exportar tools para uso em agentes
 export { fileTools };
 
+// ============================================
+// WORKSPACE - Área de trabalho persistente
+// ============================================
 const workspace = new Workspace({
   name: 'xpertia-workspace',
   storage: new LocalFilesystem({
@@ -19,16 +22,36 @@ const workspace = new Workspace({
   }),
 });
 
+// ============================================
+// STORAGE - Dados do framework (threads, traces, etc.)
+// Esquema: 'mastra' - isolado da aplicação
+// ============================================
+const storage = new PostgresStore({
+  id: "mastra-storage",
+  connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',
+  schemaName: 'mastra',
+});
+
+// ============================================
+// VECTOR STORE - RAG da aplicação (KBs, embeddings)
+// Esquema: 'xpertia_rag' - isolado do framework
+// ============================================
+export const pgVector = new PgVector({
+  id: 'xpertia-rag',
+  connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',
+  schemaName: 'xpertia_rag',
+});
+
+// ============================================
+// MASTRA INSTANCE
+// ============================================
 export const mastra = new Mastra({
   workflows: { weatherWorkflow },
   agents: { weatherAgent, conversationalAgent },
   scorers: { toolCallAppropriatenessScorer, completenessScorer, translationScorer },
   workspace,
-  storage: new PostgresStore({
-    id: "mastra-storage",
-    connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',
-    schemaName: 'mastra', // All Mastra data persisted in 'mastra' schema (isolated from application data)
-  }),
+  storage,
+  vector: pgVector,  // Vector store para RAG
   logger: new PinoLogger({
     name: 'Mastra',
     level: 'info',
