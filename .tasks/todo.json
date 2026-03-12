@@ -1,0 +1,743 @@
+{
+  "project": "Xpert-Gov MVP - SERPRO",
+  "version": "1.0",
+  "totalSprints": 8,
+  "sprintDuration": "2 semanas",
+  "tasks": [
+    {
+      "id": "S1-001",
+      "sprint": 1,
+      "title": "Setup projeto Mastra estrutura base",
+      "description": "Inicializar projeto Mastra em XpertIA/ com estrutura de diretórios (agents/, tools/, workflows/, rag/, utils/)",
+      "priority": "high",
+      "dependencies": [],
+      "parallelizable": false,
+      "estimatedHours": 4,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Estrutura de pastas criada conforme documentação",
+        "package.json configurado com dependências Mastra",
+        "tsconfig.json configurado para ES2022",
+        "Projeto executa 'mastra dev' sem erros"
+      ]
+    },
+    {
+      "id": "S1-002",
+      "sprint": 1,
+      "title": "Configurar PostgreSQL + pgvector",
+      "description": "Criar schemas do banco para storage, memory e RAG. Configurar tabelas de audit trail",
+      "priority": "high",
+      "dependencies": ["S1-001"],
+      "parallelizable": false,
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Schema xpert_gov criado no PostgreSQL",
+        "Tabela audit_logs configurada",
+        "Tabela de embeddings/vector configurada para RAG futuro",
+        "Variáveis DATABASE_URL configuradas em .env"
+      ]
+    },
+    {
+      "id": "S1-003",
+      "sprint": 1,
+      "title": "Configurar Mastra index.ts base",
+      "description": "Configurar instância Mastra com PostgreStore, Memory, Observability e Logger",
+      "priority": "high",
+      "dependencies": ["S1-002"],
+      "parallelizable": false,
+      "estimatedHours": 4,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Mastra configurado com PostgresStore",
+        "PinoLogger configurado",
+        "Observability com audit trail habilitado",
+        "Health check endpoint funcionando"
+      ]
+    },
+
+    {
+      "id": "S2-001",
+      "sprint": 2,
+      "title": "Implementar readPDFTool",
+      "description": "Tool para extrair texto e tabelas de PDFs usando pdf-parse ou similar",
+      "priority": "high",
+      "dependencies": ["S1-003"],
+      "parallelizable": true,
+      "group": "file-tools",
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Extrai texto de PDFs",
+        "Suporta extração de tabelas",
+        "Suporta seleção de páginas",
+        "Retorna metadata do documento"
+      ]
+    },
+    {
+      "id": "S2-002",
+      "sprint": 2,
+      "title": "Implementar readDOCXTool",
+      "description": "Tool para ler documentos Word (DOCX) usando mammoth ou docx-parser",
+      "priority": "high",
+      "dependencies": ["S1-003"],
+      "parallelizable": true,
+      "group": "file-tools",
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Extrai texto mantendo estrutura",
+        "Extrai headings/estilos",
+        "Suporta headers e footers",
+        "Trata imagens (referência)"
+      ]
+    },
+    {
+      "id": "S2-003",
+      "sprint": 2,
+      "title": "Implementar readExcelTool",
+      "description": "Tool para ler planilhas XLSX e CSV usando xlsx (SheetJS)",
+      "priority": "high",
+      "dependencies": ["S1-003"],
+      "parallelizable": true,
+      "group": "file-tools",
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Lê múltiplas sheets",
+        "Retorna dados como array de objetos",
+        "Suporta especificação de range",
+        "Gera summary automático dos dados"
+      ]
+    },
+    {
+      "id": "S2-004",
+      "sprint": 2,
+      "title": "Implementar writeDOCXTool",
+      "description": "Tool para criar documentos Word a partir de conteúdo texto",
+      "priority": "high",
+      "dependencies": ["S1-003"],
+      "parallelizable": true,
+      "group": "file-tools",
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Cria DOCX com conteúdo formatado",
+        "Suporta headings e estilos básicos",
+        "Salva em diretório especificado",
+        "Retorna path e metadata do arquivo"
+      ]
+    },
+    {
+      "id": "S2-005",
+      "sprint": 2,
+      "title": "Implementar writeExcelTool",
+      "description": "Tool para criar planilhas XLSX a partir de dados JSON/array",
+      "priority": "high",
+      "dependencies": ["S1-003"],
+      "parallelizable": true,
+      "group": "file-tools",
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Cria XLSX a partir de array de objetos",
+        "Nomeia sheets personalizavelmente",
+        "Formata headers automaticamente",
+        "Suporta múltiplas sheets"
+      ]
+    },
+    {
+      "id": "S2-006",
+      "sprint": 2,
+      "title": "Testes unitários das tools de arquivo",
+      "description": "Criar testes para todas as tools de arquivo com arquivos de exemplo",
+      "priority": "medium",
+      "dependencies": ["S2-001", "S2-002", "S2-003", "S2-004", "S2-005"],
+      "parallelizable": false,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Testes para leitura de PDF, DOCX, XLSX",
+        "Testes para escrita de DOCX, XLSX",
+        "Arquivos de fixture criados",
+        "Todos os testes passando"
+      ]
+    },
+
+    {
+      "id": "S3-001",
+      "sprint": 3,
+      "title": "Implementar webSearchTool (DuckDuckGo)",
+      "description": "Tool de pesquisa web usando DuckDuckGo (gratuito) via duckduckgo-search",
+      "priority": "high",
+      "dependencies": ["S1-003"],
+      "parallelizable": true,
+      "group": "web-tools",
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Realiza buscas via DuckDuckGo",
+        "Retorna título, URL e snippet",
+        "Configurável número de resultados",
+        "Trata rate limiting gracefully"
+      ]
+    },
+    {
+      "id": "S3-002",
+      "sprint": 3,
+      "title": "Implementar fetchURLTool",
+      "description": "Tool para extrair conteúdo textual de páginas web",
+      "priority": "high",
+      "dependencies": ["S1-003"],
+      "parallelizable": true,
+      "group": "web-tools",
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Extrai texto limpo de HTML",
+        "Extrai título e meta tags",
+        "Remove scripts e estilos",
+        "Trata timeouts e erros HTTP"
+      ]
+    },
+    {
+      "id": "S3-003",
+      "sprint": 3,
+      "title": "Implementar summarizeContentTool",
+      "description": "Tool para sumarização de conteúdo usando LLM",
+      "priority": "high",
+      "dependencies": ["S1-003"],
+      "parallelizable": true,
+      "group": "analysis-tools",
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Sumariza textos longos",
+        "Suporta estilos: executive, detailed, bullet",
+        "Respeita limite de tamanho",
+        "Preserva pontos essenciais"
+      ]
+    },
+    {
+      "id": "S3-004",
+      "sprint": 3,
+      "title": "Implementar calculateTool",
+      "description": "Tool para cálculos matemáticos e estatísticos",
+      "priority": "medium",
+      "dependencies": ["S1-003"],
+      "parallelizable": true,
+      "group": "analysis-tools",
+      "estimatedHours": 4,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Avalia expressões matemáticas",
+        "Suporta variáveis",
+        "Retorna resultado e steps",
+        "Trata erros de sintaxe"
+      ]
+    },
+    {
+      "id": "S3-005",
+      "sprint": 3,
+      "title": "Testes integração web e análise",
+      "description": "Testar tools de web search, fetch e sumarização",
+      "priority": "medium",
+      "dependencies": ["S3-001", "S3-002", "S3-003", "S3-004"],
+      "parallelizable": false,
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Testes de busca web funcionando",
+        "Testes de fetch URL",
+        "Testes de sumarização",
+        "Mock para testes offline"
+      ]
+    },
+
+    {
+      "id": "S4-001",
+      "sprint": 4,
+      "title": "Criar analyst-agent",
+      "description": "Subagente especializado em análise de dados, planilhas e cálculos",
+      "priority": "high",
+      "dependencies": ["S2-006", "S3-005"],
+      "parallelizable": true,
+      "group": "agents",
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Agente configurado com instructions detalhadas",
+        "Tools de Excel e cálculo vinculadas",
+        "Teste: analisar planilha de exemplo",
+        "Memory configurada"
+      ]
+    },
+    {
+      "id": "S4-002",
+      "sprint": 4,
+      "title": "Criar writer-agent",
+      "description": "Subagente especializado em redação e revisão de documentos",
+      "priority": "high",
+      "dependencies": ["S2-006", "S3-005"],
+      "parallelizable": true,
+      "group": "agents",
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Agente configurado com instructions detalhadas",
+        "Tools de DOCX vinculadas",
+        "Teste: redigir documento de exemplo",
+        "Suporta diferentes estilos de escrita"
+      ]
+    },
+    {
+      "id": "S4-003",
+      "sprint": 4,
+      "title": "Criar research-agent",
+      "description": "Subagente especializado em pesquisa web e sumarização",
+      "priority": "high",
+      "dependencies": ["S2-006", "S3-005"],
+      "parallelizable": true,
+      "group": "agents",
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Agente configurado com instructions detalhadas",
+        "Tools de web search e fetch vinculadas",
+        "Teste: pesquisar e sumarizar tópico",
+        "Cita fontes nas respostas"
+      ]
+    },
+    {
+      "id": "S4-004",
+      "sprint": 4,
+      "title": "Criar doc-processor-agent",
+      "description": "Subagente especializado em processamento de arquivos diversos",
+      "priority": "high",
+      "dependencies": ["S2-006", "S3-005"],
+      "parallelizable": true,
+      "group": "agents",
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Agente configurado com instructions detalhadas",
+        "Todas tools de arquivo vinculadas",
+        "Teste: processar PDF e gerar DOCX",
+        "Suporta múltiplos formatos"
+      ]
+    },
+    {
+      "id": "S4-005",
+      "sprint": 4,
+      "title": "Testes dos 4 subagentes",
+      "description": "Testar capacidades individuais de cada subagente",
+      "priority": "medium",
+      "dependencies": ["S4-001", "S4-002", "S4-003", "S4-004"],
+      "parallelizable": false,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Testes do analyst-agent passando",
+        "Testes do writer-agent passando",
+        "Testes do research-agent passando",
+        "Testes do doc-processor-agent passando"
+      ]
+    },
+
+    {
+      "id": "S5-001",
+      "sprint": 5,
+      "title": "Implementar xpert-gov-coordinator",
+      "description": "Agente coordenador com arquitetura CoT para orquestrar subagentes",
+      "priority": "high",
+      "dependencies": ["S4-005"],
+      "parallelizable": false,
+      "estimatedHours": 12,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Coordinator com instructions CoT detalhadas",
+        "Todos os 4 subagentes registrados",
+        "maxSteps configurado (15)",
+        "Sistema de delegação funcionando"
+      ]
+    },
+    {
+      "id": "S5-002",
+      "sprint": 5,
+      "title": "Implementar lógica de delegação inteligente",
+      "description": "Sistema para coordinator decidir qual agente usar baseado na intenção",
+      "priority": "high",
+      "dependencies": ["S5-001"],
+      "parallelizable": false,
+      "estimatedHours": 10,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Análise de intenção do usuário",
+        "Mapeamento intenção → agente",
+        "Fallback quando incerto",
+        "Logging de decisões"
+      ]
+    },
+    {
+      "id": "S5-003",
+      "sprint": 5,
+      "title": "Implementar sistema de contexto entre agentes",
+      "description": "Passar contexto e resultados entre delegações",
+      "priority": "high",
+      "dependencies": ["S5-001"],
+      "parallelizable": true,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Contexto mantido entre steps",
+        "Resultados de agentes anteriores disponíveis",
+        "Memory persistente por conversa",
+        "Working memory configurada"
+      ]
+    },
+    {
+      "id": "S5-004",
+      "sprint": 5,
+      "title": "Testes de integração coordinator + subagentes",
+      "description": "Testar fluxos de delegação e orquestração",
+      "priority": "medium",
+      "dependencies": ["S5-002", "S5-003"],
+      "parallelizable": false,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Teste: delegação para analyst-agent",
+        "Teste: delegação para writer-agent",
+        "Teste: delegação sequencial",
+        "Teste: fluxo complexo multi-agente"
+      ]
+    },
+
+    {
+      "id": "S6-001",
+      "sprint": 6,
+      "title": "Implementar workflow processamento-inteligente",
+      "description": "Workflow principal que interpreta, executa, revisa e consolida",
+      "priority": "high",
+      "dependencies": ["S5-004"],
+      "parallelizable": false,
+      "estimatedHours": 12,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Step de interpretação de solicitação",
+        "Step de execução de tasks",
+        "Step de revisão crítica",
+        "Step de consolidação final"
+      ]
+    },
+    {
+      "id": "S6-002",
+      "sprint": 6,
+      "title": "Implementar sistema de auto-correção",
+      "description": "Mecanismo para detectar erros e re-executar tasks",
+      "priority": "high",
+      "dependencies": ["S6-001"],
+      "parallelizable": false,
+      "estimatedHours": 10,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Detecção de falhas nas tasks",
+        "Sistema de retry com backoff",
+        "Fallback para alternativas",
+        "Notificação ao usuário sobre correções"
+      ]
+    },
+    {
+      "id": "S6-003",
+      "sprint": 6,
+      "title": "Implementar handlers de saída em arquivo",
+      "description": "Sistema para salvar resultados em arquivos (DOCX, XLSX, PDF)",
+      "priority": "medium",
+      "dependencies": ["S6-001"],
+      "parallelizable": true,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Detecta quando salvar em arquivo",
+        "Gera DOCX a partir de resposta",
+        "Gera XLSX a partir de dados",
+        "Organiza arquivos em diretório de saída"
+      ]
+    },
+    {
+      "id": "S6-004",
+      "sprint": 6,
+      "title": "Testes end-to-end do workflow",
+      "description": "Testar cenários completos de uso",
+      "priority": "medium",
+      "dependencies": ["S6-002", "S6-003"],
+      "parallelizable": false,
+      "estimatedHours": 10,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Cenário: análise de planilha + relatório",
+        "Cenário: pesquisa + sumarização",
+        "Cenário: processamento de PDF + extração",
+        "Todos os cenários passando"
+      ]
+    },
+
+    {
+      "id": "S7-001",
+      "sprint": 7,
+      "title": "Configurar PgVector para RAG",
+      "description": "Configurar extensão pgvector e tabelas de embeddings",
+      "priority": "high",
+      "dependencies": ["S1-002"],
+      "parallelizable": false,
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Extensão pgvector habilitada",
+        "Tabela de embeddings criada",
+        "Índices vetoriais configurados",
+        "Teste de similaridade funcionando"
+      ]
+    },
+    {
+      "id": "S7-002",
+      "sprint": 7,
+      "title": "Implementar document loader e chunking",
+      "description": "Sistema para carregar documentos e dividir em chunks",
+      "priority": "high",
+      "dependencies": ["S7-001"],
+      "parallelizable": false,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Loader para PDF, DOCX, TXT",
+        "Chunking por parágrafos/tamanho",
+        "Overlap configurável",
+        "Preservação de metadata"
+      ]
+    },
+    {
+      "id": "S7-003",
+      "sprint": 7,
+      "title": "Implementar indexing pipeline",
+      "description": "Pipeline para gerar embeddings e indexar documentos",
+      "priority": "high",
+      "dependencies": ["S7-002"],
+      "parallelizable": false,
+      "estimatedHours": 10,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Geração de embeddings (OpenAI/local)",
+        "Armazenamento no PgVector",
+        "Deduplicação de chunks",
+        "Atualização incremental"
+      ]
+    },
+    {
+      "id": "S7-004",
+      "sprint": 7,
+      "title": "Implementar query RAG tool",
+      "description": "Tool para consultar base de conhecimento vetorial",
+      "priority": "high",
+      "dependencies": ["S7-003"],
+      "parallelizable": false,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Busca semântica por similaridade",
+        "Retorna top-K chunks relevantes",
+        "Inclui metadata do documento",
+        "Score de relevância"
+      ]
+    },
+    {
+      "id": "S7-005",
+      "sprint": 7,
+      "title": "Integrar RAG ao research-agent",
+      "description": "Adicionar capacidade de consulta RAG ao agente de pesquisa",
+      "priority": "medium",
+      "dependencies": ["S7-004"],
+      "parallelizable": false,
+      "estimatedHours": 6,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Research-agent usa query RAG",
+        "Prioriza RAG sobre web quando apropriado",
+        "Cita fontes dos documentos",
+        "Fallback para web quando não encontra"
+      ]
+    },
+    {
+      "id": "S7-006",
+      "sprint": 7,
+      "title": "Criar base de conhecimento inicial",
+      "description": "Indexar legislação básica para governo federal",
+      "priority": "low",
+      "dependencies": ["S7-004"],
+      "parallelizable": false,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Lei 8.112/1990 (RJU) indexada",
+        "Lei 14.133/2021 (Licitações) indexada",
+        "Decreto 4.307/2002 (Diárias) indexada",
+        "Testes de recuperação funcionando"
+      ]
+    },
+
+    {
+      "id": "S8-001",
+      "sprint": 8,
+      "title": "Refinar prompts de todos os agentes",
+      "description": "Otimização de instructions para melhor performance",
+      "priority": "medium",
+      "dependencies": ["S6-004", "S7-006"],
+      "parallelizable": false,
+      "estimatedHours": 10,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Prompts do coordinator otimizados",
+        "Prompts dos subagentes revisados",
+        "Few-shot examples adicionados",
+        "Testes de qualidade passando"
+      ]
+    },
+    {
+      "id": "S8-002",
+      "sprint": 8,
+      "title": "Implementar sistema de feedback do usuário",
+      "description": "Mecanismo para coletar feedback e melhorar respostas",
+      "priority": "medium",
+      "dependencies": ["S8-001"],
+      "parallelizable": false,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Captura feedback (+/-) nas respostas",
+        "Armazena feedback no banco",
+        "Usa feedback para ajustar prompts",
+        "Dashboard de métricas"
+      ]
+    },
+    {
+      "id": "S8-003",
+      "sprint": 8,
+      "title": "Documentação de uso e exemplos",
+      "description": "Criar documentação completa com exemplos de uso",
+      "priority": "medium",
+      "dependencies": ["S8-001"],
+      "parallelizable": true,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "README com instruções de uso",
+        "Documentação de cada agente",
+        "Exemplos de prompts (10+ casos)",
+        "Guia de troubleshooting"
+      ]
+    },
+    {
+      "id": "S8-004",
+      "sprint": 8,
+      "title": "Preparação para deploy SERPRO",
+      "description": "Configurações de produção e segurança",
+      "priority": "high",
+      "dependencies": ["S8-001", "S8-002"],
+      "parallelizable": false,
+      "estimatedHours": 10,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Variáveis de ambiente configuradas",
+        "Logging de auditoria completo",
+        "Sanitização de inputs",
+        "Rate limiting configurado"
+      ]
+    },
+    {
+      "id": "S8-005",
+      "sprint": 8,
+      "title": "Deploy em homologação SERPRO",
+      "description": "Deploy da aplicação em ambiente de homologação",
+      "priority": "high",
+      "dependencies": ["S8-004"],
+      "parallelizable": false,
+      "estimatedHours": 8,
+      "status": "pending",
+      "acceptanceCriteria": [
+        "Aplicação rodando em homologação",
+        "PostgreSQL conectado",
+        "Health checks funcionando",
+        "Logs sendo gerados"
+      ]
+    }
+  ],
+
+  "parallelGroups": {
+    "S2-file-tools": {
+      "description": "Tools de arquivo podem ser desenvolvidas em paralelo",
+      "tasks": ["S2-001", "S2-002", "S2-003", "S2-004", "S2-005"],
+      "sprint": 2
+    },
+    "S3-web-analysis": {
+      "description": "Tools de web e análise podem ser desenvolvidas em paralelo",
+      "tasks": ["S3-001", "S3-002", "S3-003", "S3-004"],
+      "sprint": 3
+    },
+    "S4-agents": {
+      "description": "Os 4 subagentes podem ser desenvolvidos em paralelo",
+      "tasks": ["S4-001", "S4-002", "S4-003", "S4-004"],
+      "sprint": 4
+    }
+  },
+
+  "milestones": [
+    {
+      "name": "Fundação Completa",
+      "sprint": 1,
+      "tasks": ["S1-001", "S1-002", "S1-003"],
+      "deliverable": "Projeto Mastra configurado com PostgreSQL"
+    },
+    {
+      "name": "Tools de Arquivo Prontas",
+      "sprint": 2,
+      "tasks": ["S2-001", "S2-002", "S2-003", "S2-004", "S2-005", "S2-006"],
+      "deliverable": "Leitura e escrita de PDF, DOCX, XLSX funcionando"
+    },
+    {
+      "name": "Pesquisa e Análise",
+      "sprint": 3,
+      "tasks": ["S3-001", "S3-002", "S3-003", "S3-004", "S3-005"],
+      "deliverable": "Web search, fetch URL e sumarização operacionais"
+    },
+    {
+      "name": "Subagentes Criados",
+      "sprint": 4,
+      "tasks": ["S4-001", "S4-002", "S4-003", "S4-004", "S4-005"],
+      "deliverable": "4 subagentes especializados testados"
+    },
+    {
+      "name": "Coordinator CoT",
+      "sprint": 5,
+      "tasks": ["S5-001", "S5-002", "S5-003", "S5-004"],
+      "deliverable": "Sistema de orquestração CoT funcionando"
+    },
+    {
+      "name": "Workflow Inteligente",
+      "sprint": 6,
+      "tasks": ["S6-001", "S6-002", "S6-003", "S6-004"],
+      "deliverable": "Workflow de processamento com auto-correção"
+    },
+    {
+      "name": "RAG Implementado",
+      "sprint": 7,
+      "tasks": ["S7-001", "S7-002", "S7-003", "S7-004", "S7-005", "S7-006"],
+      "deliverable": "Sistema RAG com base de conhecimento"
+    },
+    {
+      "name": "MVP em Homologação",
+      "sprint": 8,
+      "tasks": ["S8-001", "S8-002", "S8-003", "S8-004", "S8-005"],
+      "deliverable": "Xpert-Gov deployado em homologação SERPRO"
+    }
+  ]
+}
