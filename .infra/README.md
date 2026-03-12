@@ -51,11 +51,10 @@ psql -U xpertia -d xpertia -f .infra/postgreSQL/03-pgvector-config.sql
 |---------|-----------|----------------|
 | `mastra` | Dados do framework (storage, observability, RAG) | Mastra (automático) |
 | `xpertia` | Dados da aplicação (knowledge base, documentos) | Aplicação |
-| `public` | Objetos compartilhados (minimizado) | PostgreSQL |
+| `public` | Objetos da aplicação (tabelas kb_*) | Aplicação |
 
-> **Nota de Migração:** As tabelas do Mastra atualmente estão no esquema `public`. 
-> Ao reiniciar com `schemaName: 'mastra'`, o Mastra criará novas tabelas no esquema `mastra`.
-> Os dados históricos permanecem em `public` até migração manual (se necessário).
+> **Status:** Migração concluída. Tabelas do Mastra removidas de `public` e 
+> esquema `mastra` preparado para receber novas tabelas.
 
 ### Extensões Instaladas
 
@@ -109,12 +108,29 @@ CREATE DATABASE xpertia;
 CREATE USER xpertia WITH ENCRYPTED PASSWORD 'sua_senha';
 GRANT ALL PRIVILEGES ON DATABASE xpertia TO xpertia;
 
-# 3. Executar scripts na ordem
+# 3. Executar scripts na ordem (obrigatório)
 \c xpertia
 \i .infra/postgreSQL/01-extensions.sql
 \i .infra/postgreSQL/02-schemas.sql
 \i .infra/postgreSQL/03-pgvector-config.sql
 ```
+
+### 🔄 Migração de Ambiente Existente
+
+Se já existe um ambiente com tabelas Mastra em `public`:
+
+```bash
+# Executar scripts 1-3 primeiro (preparação)
+psql -U xpertia -d xpertia -f .infra/postgreSQL/01-extensions.sql
+psql -U xpertia -d xpertia -f .infra/postgreSQL/02-schemas.sql
+psql -U xpertia -d xpertia -f .infra/postgreSQL/03-pgvector-config.sql
+
+# ⚠️ Depois executar MIGRAÇÃO (destrói dados em public!)
+psql -U xpertia -d xpertia -f .infra/postgreSQL/04-migrate-mastra-to-schema.sql
+```
+
+> **⚠️ ATENÇÃO:** O script `04-migrate-mastra-to-schema.sql` REMOVE permanentemente 
+> as tabelas do Mastra do esquema `public`. Só execute se tiver autorização explícita.
 
 ---
 
