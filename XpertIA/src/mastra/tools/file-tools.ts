@@ -5,7 +5,6 @@
 
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import { PDFDocument } from 'pdf-lib';
 import PDFParser from 'pdf2json';
 import * as XLSX from 'xlsx';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
@@ -17,11 +16,53 @@ import * as path from 'path';
 // READ PDF TOOL
 // ============================================
 
+/**
+ * Resolve o caminho do arquivo tentando múltiplas estratégias
+ * O Mastra pode executar de diretórios diferentes, então tentamos várias opções
+ */
+async function resolveFilePath(filePath: string): Promise<{ fullPath: string; attempted: string[] }> {
+  const attempted: string[] = [];
+  
+  // Se já for caminho absoluto, usar diretamente
+  if (path.isAbsolute(filePath)) {
+    return { fullPath: filePath, attempted: [filePath] };
+  }
+  
+  // Estratégias para resolver o caminho (em ordem de prioridade)
+  // IMPORTANTE: Em mastra dev, process.cwd() é src/mastra/public/
+  // Precisamos subir 3 níveis (../../../) para chegar na raiz do projeto
+  const strategies = [
+    // 1. A partir da raiz do projeto (quando cwd é a raiz)
+    path.resolve(process.cwd(), 'workspace', filePath),
+    // 2. Subindo 3 níveis a partir de src/mastra/public/ (mastra dev)
+    path.resolve(process.cwd(), '../../../workspace', filePath),
+    // 3. Direto como está (se já incluir workspace/)
+    path.resolve(process.cwd(), filePath),
+    // 4. Subindo 3 níveis + caminho direto
+    path.resolve(process.cwd(), '../../..', filePath),
+  ];
+  
+  for (const candidate of strategies) {
+    attempted.push(candidate);
+    try {
+      await fs.access(candidate);
+      // Arquivo encontrado!
+      return { fullPath: candidate, attempted };
+    } catch {
+      // Não existe neste caminho, tentar próximo
+      continue;
+    }
+  }
+  
+  // Nenhum caminho funcionou, retornar o primeiro (para mensagem de erro)
+  return { fullPath: strategies[0], attempted };
+}
+
 export const readPDFTool = createTool({
   id: 'read-pdf',
-  description: 'Extrai texto de arquivos PDF com suporte a seleção de páginas',
+  description: 'Extrai texto de arquivos PDF com suporte a seleção de páginas. O caminho deve ser relativo à pasta workspace/ (ex: uploads/arquivo.pdf)',
   inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo PDF relativo à pasta workspace/'),
+    filePath: z.string().describe('Caminho do arquivo PDF relativo à pasta workspace/ (ex: uploads/arquivo.pdf)'),
     startPage: z.number().optional().describe('Página inicial (1-indexed, padrão: 1)'),
     endPage: z.number().optional().describe('Página final (inclusive, padrão: última)'),
   }),
@@ -32,73 +73,184 @@ export const readPDFTool = createTool({
       totalPages: z.number(),
       extractedPages: z.number(),
       fileName: z.string(),
+      requestedStartPage: z.number().optional(),
+      requestedEndPage: z.number().optional(),
     }),
     error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ filePath, startPage, endPage }: { 
+    filePath: string; 
+    startPage?: number; 
+    endPage?: number;
+  }) => {
+    const fileName = path.basename(filePath);
+    
+    // Resolver caminho usando múltiplas estratégias
+    const { fullPath, attempted } = await resolveFilePath(filePath);
+    
+    // Log para debug
+    console.log(`[readPDFTool] filePath: ${filePath}`);
+    console.log(`[readPDFTool] process.cwd(): ${process.cwd()}`);
+    console.log(`[readPDFTool] Caminhos tentados: ${attempted.join(', ')}`);
+    console.log(`[readPDFTool] Usando: ${fullPath}`);
+    
+    // Validar parâmetros de página
+    const start = startPage && startPage > 0 ? startPage - 1 : 0; // Converter para 0-indexed
+    const end = endPage && endPage > 0 ? endPage - 1 : null;
+    
     try {
-      const { filePath, startPage, endPage } = context;
-      const fullPath = path.join('./workspace', filePath);
+      // Verificar se arquivo existe antes de tentar ler
+      try {
+        await fs.access(fullPath);
+      } catch {
+        return {
+          success: false,
+          text: '',
+          metadata: { totalPages: 0, extractedPages: 0, fileName },
+          error: `❌ ARQUIVO NÃO ENCONTRADO: '${filePath}'\n\n` +
+                 `Caminhos tentados:\n` +
+                 attempted.map((p, i) => `  ${i + 1}. ${p}`).join('\n') + `\n\n` +
+                 `Verifique:\n` +
+                 `  • O arquivo existe em workspace/uploads/?\n` +
+                 `  • O nome do arquivo está correto (incluindo maiúsculas/minúsculas)?\n` +
+                 `  • process.cwd() atual: ${process.cwd()}`,
+        };
+      }
+
+      // Verificar se é um arquivo PDF válido
+      const stats = await fs.stat(fullPath);
+      if (!stats.isFile()) {
+        return {
+          success: false,
+          text: '',
+          metadata: { totalPages: 0, extractedPages: 0, fileName },
+          error: `❌ CAMINHO INVÁLIDO: '${filePath}' não é um arquivo.`,
+        };
+      }
+
+      if (stats.size === 0) {
+        return {
+          success: false,
+          text: '',
+          metadata: { totalPages: 0, extractedPages: 0, fileName },
+          error: `❌ ARQUIVO VAZIO: O arquivo '${fileName}' está vazio (0 bytes).`,
+        };
+      }
       
-      // Extrair texto usando pdf2json
-      const text = await new Promise<string>((resolve, reject) => {
+      // Extrair texto usando pdf2json com timeout e suporte a range de páginas
+      const result = await new Promise<{ text: string; totalPages: number; extractedPages: number }>((resolve, reject) => {
         const pdfParser = new PDFParser();
+        let timeoutId: NodeJS.Timeout;
+        
+        // Timeout de 15 segundos
+        timeoutId = setTimeout(() => {
+          reject(new Error('Timeout ao processar PDF (>15s)'));
+        }, 15000);
         
         pdfParser.on('pdfParser_dataError', (errData) => {
-          reject(new Error(errData.parserError || 'Erro ao parsear PDF'));
+          clearTimeout(timeoutId);
+          const errorMsg = errData.parserError || 'Erro desconhecido ao parsear PDF';
+          reject(new Error(`PDF parse error: ${errorMsg}`));
         });
         
         pdfParser.on('pdfParser_dataReady', (pdfData) => {
-          // Extrair texto de todas as páginas
+          clearTimeout(timeoutId);
+          
+          const totalPages = pdfData.Pages?.length || 0;
+          
+          // Determinar range de páginas a extrair
+          const actualEnd = end !== null && end < totalPages ? end : totalPages - 1;
+          const pageStart = Math.min(start, totalPages - 1);
+          const pageEnd = Math.max(pageStart, actualEnd);
+          
+          // Extrair texto das páginas selecionadas
           let extractedText = '';
-          if (pdfData.Pages && Array.isArray(pdfData.Pages)) {
-            pdfData.Pages.forEach((page: any) => {
-              if (page.Texts && Array.isArray(page.Texts)) {
-                page.Texts.forEach((textItem: any) => {
-                  if (textItem.R && Array.isArray(textItem.R)) {
-                    textItem.R.forEach((r: any) => {
-                      if (r.T) {
-                        // Decodificar URI encoding (se necessário)
-                        try {
-                          extractedText += decodeURIComponent(r.T) + ' ';
-                        } catch {
-                          // Se falhar, usar texto como está
-                          extractedText += r.T + ' ';
-                        }
+          const pagesToProcess = pdfData.Pages?.slice(pageStart, pageEnd + 1) || [];
+          
+          pagesToProcess.forEach((page: any, idx: number) => {
+            const pageNum = pageStart + idx + 1; // 1-indexed para exibição
+            extractedText += `\n--- Página ${pageNum} ---\n`;
+            
+            if (page.Texts && Array.isArray(page.Texts)) {
+              page.Texts.forEach((textItem: any) => {
+                if (textItem.R && Array.isArray(textItem.R)) {
+                  textItem.R.forEach((r: any) => {
+                    if (r.T) {
+                      try {
+                        extractedText += decodeURIComponent(r.T) + ' ';
+                      } catch {
+                        extractedText += r.T + ' ';
                       }
-                    });
-                  }
-                });
-                extractedText += '\n';
-              }
-            });
-          }
-          resolve(extractedText.trim());
+                    }
+                  });
+                }
+              });
+              extractedText += '\n';
+            }
+          });
+          
+          resolve({
+            text: extractedText.trim(),
+            totalPages,
+            extractedPages: pagesToProcess.length,
+          });
         });
         
-        pdfParser.loadPDF(fullPath);
+        try {
+          pdfParser.loadPDF(fullPath);
+        } catch (err) {
+          clearTimeout(timeoutId);
+          reject(new Error(`Erro ao iniciar parser: ${err}`));
+        }
       });
       
-      // Contar páginas usando pdf-lib (já está carregado)
-      const fileBuffer = await fs.readFile(fullPath);
-      const pdfDoc = await PDFDocument.load(fileBuffer);
-      const totalPages = pdfDoc.getPageCount();
+      // Verificar se extraiu texto
+      if (!result.text || result.text.trim().length === 0) {
+        return {
+          success: false,
+          text: '',
+          metadata: { 
+            totalPages: result.totalPages, 
+            extractedPages: 0, 
+            fileName,
+          },
+          error: `❌ PDF SEM TEXTO EXTRAÍVEL: O arquivo '${fileName}' possui ${result.totalPages} página(s), mas não foi possível extrair texto. ` +
+                 `O PDF pode ser uma imagem digitalizada ou estar protegido.`,
+        };
+      }
       
       return {
         success: true,
-        text: text,
+        text: result.text,
         metadata: {
-          totalPages,
-          extractedPages: totalPages,
-          fileName: path.basename(filePath),
+          totalPages: result.totalPages,
+          extractedPages: result.extractedPages,
+          fileName,
+          requestedStartPage: startPage || 1,
+          requestedEndPage: endPage || result.totalPages,
         },
       };
     } catch (error) {
+      // Identificar tipo específico de erro
+      let errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao ler PDF';
+      
+      if (errorMessage.includes('InvalidPDF')) {
+        errorMessage = `❌ PDF INVÁLIDO: O arquivo '${fileName}' não é um PDF válido ou está corrompido.`;
+      } else if (errorMessage.includes('encrypted') || errorMessage.includes('password')) {
+        errorMessage = `❌ PDF PROTEGIDO: O arquivo '${fileName}' está protegido por senha e não pode ser lido.`;
+      } else if (errorMessage.includes('ENOENT')) {
+        errorMessage = `❌ ARQUIVO NÃO ENCONTRADO: '${filePath}' não existe em workspace/.`;
+      } else if (errorMessage.includes('EACCES') || errorMessage.includes('permission')) {
+        errorMessage = `❌ PERMISSÃO NEGADA: Sem acesso para ler '${fileName}'.`;
+      } else {
+        errorMessage = `❌ ERRO AO LER PDF '${fileName}': ${errorMessage}`;
+      }
+      
       return {
         success: false,
         text: '',
-        metadata: { totalPages: 0, extractedPages: 0, fileName: '' },
-        error: error instanceof Error ? error.message : 'Erro desconhecido ao ler PDF',
+        metadata: { totalPages: 0, extractedPages: 0, fileName },
+        error: errorMessage,
       };
     }
   },
@@ -129,13 +281,13 @@ export const readDOCXTool = createTool({
     }),
     error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ filePath, extractHtml }: { filePath: string; extractHtml?: boolean }) => {
     try {
-      const fullPath = path.join('./workspace', context.filePath);
+      const { fullPath } = await resolveFilePath(filePath);
       const fileBuffer = await fs.readFile(fullPath);
       
       const result = await mammoth.extractRawText({ buffer: fileBuffer });
-      const htmlResult = context.extractHtml 
+      const htmlResult = extractHtml 
         ? await mammoth.convertToHtml({ buffer: fileBuffer })
         : { value: '' };
       
@@ -159,10 +311,10 @@ export const readDOCXTool = createTool({
       return {
         success: true,
         text,
-        html: context.extractHtml ? htmlResult.value : undefined,
+        html: extractHtml ? htmlResult.value : undefined,
         headings,
         metadata: {
-          fileName: path.basename(context.filePath),
+          fileName: path.basename(filePath),
           wordCount: words.length,
         },
       };
@@ -205,15 +357,15 @@ export const readExcelTool = createTool({
     }),
     error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async ({ filePath, sheetName, range, headerRow }: { filePath: string; sheetName?: string; range?: string; headerRow?: number }) => {
     try {
-      const fullPath = path.join('./workspace', context.filePath);
+      const { fullPath } = await resolveFilePath(filePath);
       const fileBuffer = await fs.readFile(fullPath);
       
       const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
       const sheetNames = workbook.SheetNames;
       
-      const targetSheet = context.sheetName || sheetNames[0];
+      const targetSheet = sheetName || sheetNames[0];
       const worksheet = workbook.Sheets[targetSheet];
       
       if (!worksheet) {
@@ -222,8 +374,8 @@ export const readExcelTool = createTool({
       
       // Converter para JSON
       const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-        header: context.headerRow ? context.headerRow - 1 : 0,
-        range: context.range,
+        header: headerRow ? headerRow - 1 : 0,
+        range: range,
         defval: null,
       });
       
@@ -244,7 +396,7 @@ export const readExcelTool = createTool({
         data: jsonData as Record<string, any>[],
         summary,
         metadata: {
-          fileName: path.basename(context.filePath),
+          fileName: path.basename(filePath),
         },
       };
     } catch (error) {

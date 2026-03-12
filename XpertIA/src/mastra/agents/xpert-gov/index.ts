@@ -93,6 +93,19 @@ CRITÉRIOS DE DECISÃO:
 - Precisa analisar dados governamentais? → xpert-gov-analyst
 - Precisa de documento oficial? → xpert-gov-writer
 
+⚠️ REGRA CRÍTICA - SEM FALLBACK AUTOMÁTICO:
+QUANDO um agente retornar ERRO, NUNCA mude automaticamente para outro agente sem:
+1. INFORMAR o usuário sobre o erro específico
+2. PERGUNTAR se deseja tentar outra abordagem
+3. Obter CONFIMAÇÃO explícita antes de usar research como fallback
+
+EXEMPLOS DE ERRO (informe ao usuário, não faça fallback sozinho):
+❌ "Não consegui ler o arquivo PDF em workspace/uploads/..." → NÃO pesquise na web
+❌ "Arquivo não encontrado em workspace/uploads/..." → NÃO pesquise na web
+❌ "Erro ao processar documento..." → NÃO pesquise na web
+
+✅ Após informar o erro, pergunte: "O arquivo existe no caminho correto? Deseja que eu pesquise informações sobre o tema na internet como alternativa?"
+
 ═══════════════════════════════════════════════════════════════════
 REGRAS DE OURO
 ═══════════════════════════════════════════════════════════════════
@@ -197,6 +210,29 @@ Usuário: "Oi, tudo bem?"
 
         if (context.error) {
           console.error(`[Delegation] ✗ ${context.primitiveId} failed:`, context.error);
+          
+          // Verificar se é erro relacionado a arquivos (não deve fazer fallback automático)
+          const errorStr = String(context.error).toLowerCase();
+          const isFileError = errorStr.includes('arquivo não encontrado') || 
+                              errorStr.includes('não foi possível ler') ||
+                              errorStr.includes('pdf inválido') ||
+                              errorStr.includes('pdf protegido') ||
+                              errorStr.includes('sem permissão') ||
+                              errorStr.includes('arquivo vazio') ||
+                              errorStr.includes('caminho inválido');
+          
+          if (isFileError && context.primitiveId === 'doc-processor') {
+            return {
+              feedback: `❌ ERRO DE LEITURA DE ARQUIVO: ${context.error}\n\n` +
+                `⚠️ IMPORTANTE: NÃO procure informações na internet como substituto. ` +
+                `O usuário solicitou especificamente a leitura de um arquivo local. ` +
+                `Informe o erro acima ao usuário e pergunte se deseja:\n` +
+                `1. Verificar o caminho do arquivo\n` +
+                `2. Tentar novamente\n` +
+                `3. Usar pesquisa web como alternativa (COM CONFIRMAÇÃO)`,
+            };
+          }
+          
           return {
             feedback: `O agente ${context.primitiveId} encontrou um erro: ${context.error}. ` +
               'Por favor, tente uma abordagem alternativa ou solicite ajuda ao usuário.',
