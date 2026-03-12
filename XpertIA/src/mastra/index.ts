@@ -38,8 +38,7 @@ export { xpertGovCoordinator };
 // WORKSPACE - Área de trabalho persistente
 // ============================================
 const workspace = new Workspace({
-  name: 'xpertia-workspace',
-  storage: new LocalFilesystem({
+  filesystem: new LocalFilesystem({
     basePath: './workspace',
   }),
 });

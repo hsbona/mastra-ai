@@ -28,8 +28,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // Carregar variáveis de ambiente do .env
 config({ path: join(__dirname, '../.env') });
 
-// Configurar DATABASE_URL diretamente para o esquema RAG correto
-process.env.DATABASE_URL = 'postgresql://xpertia:xpertia_dev@127.0.0.1:5432/xpertia';
+// Usar DATABASE_URL do .env (conexão direta ao VPS com SSL)
+// Não sobrescrever - permitir que o .env defina a conexão
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL não definido no .env');
+}
 
 // Usar provider OpenRouter com OpenAI embeddings
 process.env.EMBEDDING_PROVIDER = 'openrouter';
