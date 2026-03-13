@@ -11,7 +11,6 @@ import { docProcessorAgent } from './agents/shared/doc-processor';
 import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
 import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
 import { xpertGovCoordinator } from './agents/xpert-gov';
-import { toolCallAppropriatenessScorer, completenessScorer, translationScorer } from './scorers/weather-scorer';
 import { fileTools } from './tools/file-tools';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
 import { systemTools } from './tools/system-tools';
@@ -104,7 +103,6 @@ export const mastra = new Mastra({
     xpertGovWriterAgent,
     xpertGovCoordinator,
   },
-  scorers: { toolCallAppropriatenessScorer, completenessScorer, translationScorer },
   workspace,
   storage,
   vectors: { pgVector },  // Vector store para RAG
