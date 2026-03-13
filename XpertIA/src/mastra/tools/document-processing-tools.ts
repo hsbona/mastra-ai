@@ -7,6 +7,12 @@ import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { 
+  selectStrategyForModel, 
+  calculateSafeChunkSize,
+  estimateOperationOverhead,
+  DEFAULT_MODEL 
+} from '../config/model-config';
 
 // ============================================
 // TOKEN ESTIMATION
@@ -33,42 +39,26 @@ export function estimateTokens(text: string): number {
 
 /**
  * Seleciona a estratégia de processamento baseada no tamanho
+ * AGORA CONSIDERA O MODELO E LIMITE DE CONTEXTO!
+ * 
+ * @param tokenCount - Número estimado de tokens no documento
+ * @param modelId - ID do modelo (default: groq/llama-3.3-70b-versatile)
+ * @param operation - Tipo de operação (afeta overhead)
+ * @param glossarySize - Tamanho do glossário (se houver)
  */
-export function selectProcessingStrategy(tokenCount: number): {
+export function selectProcessingStrategy(
+  tokenCount: number,
+  modelId: string = DEFAULT_MODEL,
+  operation: 'summarize' | 'translate' | 'analyze' = 'summarize',
+  glossarySize: number = 0
+): {
   strategy: 'direct' | 'map-reduce' | 'hierarchical';
   chunkSize: number;
   overlap: number;
   description: string;
 } {
-  if (tokenCount < 6000) {
-    return {
-      strategy: 'direct',
-      chunkSize: tokenCount,
-      overlap: 0,
-      description: 'Processamento direto (documento pequeno)',
-    };
-  } else if (tokenCount < 50000) {
-    return {
-      strategy: 'map-reduce',
-      chunkSize: 4000,
-      overlap: 400,
-      description: 'Map-Reduce paralelo (documento médio)',
-    };
-  } else if (tokenCount < 200000) {
-    return {
-      strategy: 'hierarchical',
-      chunkSize: 3500,
-      overlap: 350,
-      description: 'Map-Reduce hierárquico (documento grande)',
-    };
-  } else {
-    return {
-      strategy: 'hierarchical',
-      chunkSize: 3000,
-      overlap: 300,
-      description: 'Map-Reduce hierárquico com chunks menores (documento muito grande)',
-    };
-  }
+  const overhead = estimateOperationOverhead(operation, glossarySize);
+  return selectStrategyForModel(tokenCount, modelId, overhead);
 }
 
 export const estimateTokensTool = createTool({
@@ -76,6 +66,8 @@ export const estimateTokensTool = createTool({
   description: 'Estima a quantidade de tokens em um texto para decidir estratégia de processamento',
   inputSchema: z.object({
     text: z.string().describe('Texto para estimar tokens'),
+    modelId: z.string().optional().describe('ID do modelo (default: groq/llama-3.3-70b-versatile)'),
+    operation: z.enum(['summarize', 'translate', 'analyze']).optional().describe('Tipo de operação'),
   }),
   outputSchema: z.object({
     tokenCount: z.number(),
@@ -83,10 +75,21 @@ export const estimateTokensTool = createTool({
     chunkSize: z.number(),
     overlap: z.number(),
     description: z.string(),
+    modelContextWindow: z.number(),
+    safeChunkSize: z.number(),
   }),
-  execute: async ({ text }: { text: string }) => {
+  execute: async ({ 
+    text, 
+    modelId = DEFAULT_MODEL,
+    operation = 'summarize'
+  }: { 
+    text: string; 
+    modelId?: string;
+    operation?: 'summarize' | 'translate' | 'analyze';
+  }) => {
     const tokenCount = estimateTokens(text);
-    const strategy = selectProcessingStrategy(tokenCount);
+    const strategy = selectProcessingStrategy(tokenCount, modelId, operation);
+    const safeChunkSize = calculateSafeChunkSize(modelId);
     
     return {
       tokenCount,
@@ -94,6 +97,8 @@ export const estimateTokensTool = createTool({
       chunkSize: strategy.chunkSize,
       overlap: strategy.overlap,
       description: strategy.description,
+      modelContextWindow: 8192, // Llama 3.3 70B
+      safeChunkSize,
     };
   },
 });
@@ -126,7 +131,7 @@ export async function semanticChunking(
   options: ChunkingOptions = {}
 ): Promise<TextChunk[]> {
   const {
-    chunkSize = 4000,
+    chunkSize = 4000, // Será ajustado dinamicamente baseado no modelo
     overlap = 400,
     preserveParagraphs = true,
   } = options;

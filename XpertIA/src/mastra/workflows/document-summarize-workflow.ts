@@ -9,7 +9,7 @@ import { Agent } from '@mastra/core/agent';
 import { writeLargeFileTool } from '../tools/document-processing-tools';
 import { 
   extractTextStep, 
-  analyzeStrategyStep, 
+  createAnalyzeStrategyStep, 
   chunkDocumentStep,
   filePathSchema,
   chunkedContentSchema,
@@ -296,6 +296,11 @@ ${summary}
 // WORKFLOW DEFINITION
 // ============================================
 
+// Criar step de análise específico para sumarização
+const analyzeSummarizeStrategyStep = createAnalyzeStrategyStep('analyze-summarize-strategy', {
+  operation: 'summarize',
+});
+
 export const documentSummarizeWorkflow = createWorkflow({
   id: 'document-summarize',
   description: 'Resume documentos grandes usando Map-Reduce',
@@ -306,7 +311,7 @@ export const documentSummarizeWorkflow = createWorkflow({
   outputSchema: summarizeOutputSchema,
 })
   .then(extractTextStep)
-  .then(analyzeStrategyStep)
+  .then(analyzeSummarizeStrategyStep)
   .then(chunkDocumentStep)
   .then(mapSummariesStep)
   .then(reduceFinalStep)

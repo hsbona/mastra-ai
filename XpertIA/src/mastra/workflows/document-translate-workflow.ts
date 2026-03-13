@@ -9,12 +9,14 @@ import { Agent } from '@mastra/core/agent';
 import { writeLargeFileTool } from '../tools/document-processing-tools';
 import { 
   extractTextStep, 
-  analyzeStrategyStep, 
-  chunkDocumentStep,
+  createAnalyzeStrategyStep, 
+  createChunkingStep,
   filePathSchema,
   extractedTextSchema,
   chunkedContentSchema,
+  analyzedContentSchema,
 } from './shared/document-steps';
+import { semanticChunking } from '../tools/document-processing-tools';
 
 // ============================================
 // SCHEMAS
@@ -108,7 +110,11 @@ const extractGlossaryStep = createStep({
   outputSchema: textWithGlossarySchema,
   execute: async ({ inputData }) => {
     const { text, fileName, targetLang, metadata } = inputData;
-    const sampleText = text.slice(0, 8000);
+    
+    // Limitar amostra para não estourar contexto
+    // Reservar espaço para instruções + resposta JSON
+    const maxSampleTokens = 1500; // ~6000 chars
+    const sampleText = text.slice(0, maxSampleTokens * 4);
     
     console.log(`[Translate] Extraindo glossário de ${fileName}...`);
     
@@ -143,6 +149,106 @@ Retorne JSON no formato especificado.
       targetLang,
       glossary,
       tokenCount,
+    };
+  },
+});
+
+// Schema para análise com glossário
+const analyzedWithGlossarySchema = analyzedContentSchema.extend({
+  targetLang: z.enum(['pt', 'en', 'es', 'fr', 'de', 'it']),
+  glossary: z.array(z.object({
+    original: z.string(),
+    translation: z.string(),
+    type: z.string(),
+  })),
+});
+
+// Step 3: Analisar estratégia considerando glossário
+const analyzeTranslateStrategyStep = createStep({
+  id: 'analyze-translate-strategy',
+  inputSchema: textWithGlossarySchema,
+  outputSchema: analyzedWithGlossarySchema,
+  execute: async ({ inputData }) => {
+    const { text, fileName, targetLang, glossary, tokenCount } = inputData;
+    
+    // Importar funções de configuração
+    const { selectProcessingStrategy, getModelConfig, estimateOperationOverhead, DEFAULT_MODEL } = 
+      await import('../config/model-config');
+    
+    const modelId = DEFAULT_MODEL;
+    const overhead = estimateOperationOverhead('translate', glossary.length);
+    const strategy = selectProcessingStrategy(tokenCount, modelId, 'translate', glossary.length);
+    const modelConfig = getModelConfig(modelId);
+    
+    console.log(`[Translate] Modelo: ${modelConfig.name}`);
+    console.log(`[Translate] Context Window: ${modelConfig.contextWindow} tokens`);
+    console.log(`[Translate] Tokens estimados: ${tokenCount}`);
+    console.log(`[Translate] Overhead glossário: ${overhead} tokens`);
+    console.log(`[Translate] Chunk Size Seguro: ${strategy.chunkSize} tokens`);
+    console.log(`[Translate] Estratégia: ${strategy.description}`);
+    
+    return {
+      text,
+      fileName,
+      targetLang,
+      glossary,
+      tokenCount,
+      strategy: strategy.strategy,
+      chunkSize: strategy.chunkSize,
+      overlap: strategy.overlap,
+      description: strategy.description,
+    };
+  },
+});
+
+// Step 4: Chunking para tradução
+const chunkTranslateDocumentStep = createStep({
+  id: 'chunk-translate-document',
+  inputSchema: analyzedWithGlossarySchema,
+  outputSchema: chunkedContentSchema.extend({
+    targetLang: z.enum(['pt', 'en', 'es', 'fr', 'de', 'it']),
+    glossary: z.array(z.object({
+      original: z.string(),
+      translation: z.string(),
+      type: z.string(),
+    })),
+  }),
+  execute: async ({ inputData }) => {
+    const { text, strategy, chunkSize, overlap, fileName, tokenCount, targetLang, glossary } = inputData;
+    
+    if (strategy === 'direct') {
+      return {
+        chunks: [{
+          content: text,
+          index: 0,
+          metadata: {
+            wordCount: text.split(/\s+/).filter(w => w.length > 0).length,
+            estimatedTokens: tokenCount,
+          },
+        }],
+        fileName,
+        tokenCount,
+        strategy,
+        targetLang,
+        glossary,
+      };
+    }
+    
+    const chunks = await semanticChunking(text, {
+      chunkSize,
+      overlap,
+      preserveParagraphs: true,
+    });
+    
+    console.log(`[Translate] Criados ${chunks.length} chunks`);
+    
+    return {
+      chunks,
+      fileName,
+      tokenCount,
+      strategy,
+      targetLang,
+      glossary,
     };
   },
 });
@@ -201,8 +307,15 @@ const translateChunksStep = createStep({
       fr: 'francês', de: 'alemão', it: 'italiano',
     };
     
-    const glossaryText = glossary.length > 0
-      ? `GLOSSÁRIO:\n${glossary.map(t => `- "${t.original}" → "${t.translation}"`).join('\n')}`
+    // Limitar glossário para não estourar contexto
+    // Cada termo ~15 tokens, limitar a ~50 termos = ~750 tokens
+    const maxGlossaryTerms = 50;
+    const limitedGlossary = glossary.length > maxGlossaryTerms 
+      ? glossary.slice(0, maxGlossaryTerms)
+      : glossary;
+    
+    const glossaryText = limitedGlossary.length > 0
+      ? `GLOSSÁRIO:\n${limitedGlossary.map(t => `- "${t.original}" → "${t.translation}"`).join('\n')}`
       : '';
     
     if (chunks.length === 1) {
@@ -350,8 +463,8 @@ export const documentTranslateWorkflow = createWorkflow({
 })
   .then(extractTextStep)
   .then(extractGlossaryStep)
-  .then(analyzeStrategyStep)
-  .then(chunkDocumentStep)
+  .then(analyzeTranslateStrategyStep)
+  .then(chunkTranslateDocumentStep)
   .then(translateChunksStep)
   .then(assembleAndSaveStep)
   .commit();

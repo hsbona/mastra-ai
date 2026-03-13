@@ -7,6 +7,7 @@ import { createStep } from '@mastra/core/workflows';
 import { z } from 'zod';
 import { estimateTokens, selectProcessingStrategy, semanticChunking } from '../../tools/document-processing-tools';
 import { readPDFTool, readDOCXTool } from '../../tools/file-tools';
+import { DEFAULT_MODEL, estimateOperationOverhead, getModelConfig } from '../../config/model-config';
 
 // ============================================
 // COMMON SCHEMAS
@@ -121,17 +122,37 @@ export const createExtractTextStep = (stepId: string = 'extract-text') => create
 // STEP 2: ANALYZE AND SELECT STRATEGY
 // ============================================
 
-export const createAnalyzeStrategyStep = (stepId: string = 'analyze-strategy') => createStep({
+export interface StrategyOptions {
+  modelId?: string;
+  operation?: 'summarize' | 'translate' | 'analyze';
+  glossarySize?: number;
+}
+
+export const createAnalyzeStrategyStep = (
+  stepId: string = 'analyze-strategy',
+  options: StrategyOptions = {}
+) => createStep({
   id: stepId,
   inputSchema: extractedTextSchema,
   outputSchema: analyzedContentSchema,
   execute: async ({ inputData }) => {
     const { text, fileName, metadata } = inputData;
     const tokenCount = estimateTokens(text);
-    const strategy = selectProcessingStrategy(tokenCount);
+    
+    // Usar configuração do modelo para calcular chunk size seguro
+    const modelId = options.modelId || DEFAULT_MODEL;
+    const operation = options.operation || 'summarize';
+    const glossarySize = options.glossarySize || 0;
+    const overhead = estimateOperationOverhead(operation, glossarySize);
+    
+    const strategy = selectProcessingStrategy(tokenCount, modelId, operation, glossarySize);
+    const modelConfig = getModelConfig(modelId);
     
     console.log(`[DocumentWorkflow] Arquivo: ${fileName}`);
+    console.log(`[DocumentWorkflow] Modelo: ${modelConfig.name}`);
+    console.log(`[DocumentWorkflow] Context Window: ${modelConfig.contextWindow} tokens`);
     console.log(`[DocumentWorkflow] Tokens estimados: ${tokenCount}`);
+    console.log(`[DocumentWorkflow] Chunk Size Seguro: ${strategy.chunkSize} tokens`);
     console.log(`[DocumentWorkflow] Estratégia: ${strategy.description}`);
     
     return {

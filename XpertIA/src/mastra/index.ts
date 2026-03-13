@@ -55,6 +55,18 @@ export {
   createChunkingStep,
 } from './workflows/shared/document-steps';
 
+// Exportar configurações de modelo e context window
+export {
+  MODEL_CONFIGS,
+  DEFAULT_MODEL,
+  getModelConfig,
+  calculateSafeChunkSize,
+  selectStrategyForModel,
+  selectProcessingStrategy,
+  validateContextWindow,
+  estimateOperationOverhead,
+} from './config/model-config';
+
 // Exportar agentes especializados
 export { researchAgent, docProcessorAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
 
