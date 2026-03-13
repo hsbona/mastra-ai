@@ -1,0 +1,62 @@
+# ============================================================================
+# KIMI IGNORE - Arquivos/Pastas ignorados por agentes de IA
+# ============================================================================
+# Este arquivo define exclusões específicas para agentes Kimi
+# Similar ao .gitignore, mas focado em conteúdo que agentes não devem processar
+
+# ----------------------------------------------------------------------------
+# PASTAS DE ARQUIVO/DOCUMENTAÇÃO OBSOLETA
+# ----------------------------------------------------------------------------
+# NUNCA processe arquivos de pastas .archive - contêm documentação histórica
+# que pode estar desatualizada e levar a decisões incorretas
+
+docs/.archive/
+.task/.archive/
+
+# ----------------------------------------------------------------------------
+# DEPENDÊNCIAS E ARTEFATOS DE BUILD
+# ----------------------------------------------------------------------------
+node_modules/
+dist/
+build/
+*.min.js
+*.min.css
+
+# ----------------------------------------------------------------------------
+# ARQUIVOS DE LOG E TEMPORÁRIOS
+# ----------------------------------------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+# ----------------------------------------------------------------------------
+# ARQUIVOS DE AMBIENTE E CREDENCIAIS
+# ----------------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+
+# ----------------------------------------------------------------------------
+# ARQUIVOS ESPECÍFICOS DE IDES
+# ----------------------------------------------------------------------------
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ----------------------------------------------------------------------------
+# ARQUIVOS DE MÍDIA E BINÁRIOS GRANDES
+# ----------------------------------------------------------------------------
+*.mp4
+*.mp3
+*.avi
+*.mov
+*.pdf
+*.zip
+*.tar.gz

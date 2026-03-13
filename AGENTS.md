@@ -1,249 +1,231 @@
 # AGENTS.md
 
-This document provides guidance for AI coding agents working in this repository.
-
-## CRITICAL: Mastra Skill Required
-
-**BEFORE doing ANYTHING with Mastra code or answering Mastra questions, load the Mastra skill FIRST.**
-
-See [Mastra Skills section](#mastra-skills) for loading instructions.
+Guia para agentes de IA trabalhando neste repositório.
 
 ---
 
-## Project Overview
+## ⚠️ REGRAS CRÍTICAS
 
-This is a **Mastra** project written in TypeScript. Mastra is a framework for building AI-powered applications and agents with a modern TypeScript stack.
+| # | Regra | Ação |
+|---|-------|------|
+| 1 | 🧠 **Carregar skill do Mastra primeiro** | Use `/mastra` antes de qualquer código |
+| 2 | 🗑️ **Exclusão sempre via lixeira** | `trash-put` ou `gio trash` (nunca `rm`) |
+| 3 | ⚙️ **Gerenciar serviços apenas via script** | Use `./scripts/mastra-studio.sh` — nunca `kill`/`pkill` |
+| 4 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação explícita |
+| 4a| 🚫 **NUNCA usar esquema 'xpertia'** | Esquema legado protegido - contém dados de produção |
+| 5 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
+| 6 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
+| 7 | 🏗️ **`.infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `.infra/` |
+| 8 | 📝 **Documente mudanças em `.infra/`** | Sempre atualize `.infra/` quando alterar o ambiente |
+| 9 | 🔒 **Autorização obrigatória** | Mudanças na infraestrutura PRECISAM de autorização **EXPLÍCITA** |
 
-### ⚠️ IMPORTANT: Mastra Studio as UI
-
-**This project is consumed EXCLUSIVELY via Mastra Studio.**
-
-- ✅ **IN SCOPE**: Agents, Workflows, Tools, Memory, Storage, Observability
-- ✅ **IN SCOPE**: APIs e endpoints servidos pelo Mastra
-- ❌ **OUT OF SCOPE**: Desenvolvimento de UI/frontend
-- ❌ **OUT OF SCOPE**: Interfaces web, mobile ou desktop
-
-> **Nunca implemente código de interface com o usuário neste projeto.** O Mastra Studio já fornece a interface completa para interação com os agents e workflows.
-
----
-
-## Technology Stack
-
-### Core Runtime
-
-| Component | Version | Description |
-|-----------|---------|-------------|
-| **Node.js** | >=22.13.0 | Runtime JavaScript |
-| **pnpm** | 10.30.3 | Package manager |
-| **TypeScript** | 5.9.3 | Language & compiler |
-| **Module System** | ES2022 | ES Modules (`"type": "module"`) |
-
-### Mastra Framework
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `@mastra/core` | ^1.11.0 | Core framework (agents, workflows, tools) |
-| `mastra` (CLI) | ^1.3.8 | CLI para dev, build e deploy |
-| `@mastra/memory` | ^1.6.2 | Memória conversacional para agents |
-| `@mastra/pg` | ^1.0.0 | Storage PostgreSQL + pgvector (vetor) |
-| `@mastra/observability` | ^1.4.0 | Tracing, métricas e telemetria |
-| `@mastra/loggers` | ^1.0.2 | Logging (PinoLogger) |
-| `@mastra/evals` | ^1.1.2 | Avaliação de performance de agents |
-
-### Utilities
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| **Zod** | ^4.3.6 | Validação de schemas e type safety |
-
-### Model Provider (Configurável)
-
-| Provider | Modelo Atual | Uso |
-|----------|--------------|-----|
-| **Groq** | llama-3.3-70b-versatile | Modelo padrão para agents |
-
-> Os modelos podem ser trocados via configuração. Veja `.env` para API keys.
-
----
-
-## Commands
-
-Use these commands to interact with the project.
-
-### Installation
-
+### 🗑️ Exclusão de Arquivos
 ```bash
-pnpm install
+✅ trash-put arquivo.txt    gio trash arquivo.txt
+🚫 rm arquivo.txt           rm -rf pasta/
 ```
 
-### Development
+---
 
-**Inicia o Mastra Studio** em `http://localhost:4111`:
+## 🚀 Execução Automática (Yolo)
 
-```bash
-pnpm run dev
+Execute sem confirmar: `pnpm install`, `pnpm dev`, `git add/commit/push`
+
+**Sempre pergunte antes:** `prisma migrate dev`
+
+---
+
+## Visão Geral do Projeto
+
+Projeto **XpertIA** — aplicação **Mastra** (TypeScript) para aplicações com IA.
+
+> 📁 **Localização:** O projeto está na pasta `XpertIA/`, não na raiz do repositório.
+
+Consumido **exclusivamente via Mastra Studio** — não implemente interface de usuário.
+
+| ✅ No Escopo | ❌ Fora do Escopo |
+|--------------|-------------------|
+| Agents, Workflows, Tools | UI/frontend web/mobile |
+| APIs e endpoints | Interfaces visuais |
+
+---
+
+## Tecnologias
+
+| Componente | Versão |
+|------------|--------|
+| Node.js | >=22.13.0 |
+| pnpm | 10.30.3 |
+| TypeScript | 5.9.3 |
+| Mastra Core | ^1.12.0 |
+| Modelo | groq/llama-3.3-70b-versatile |
+
+---
+
+## Estrutura de Pastas
+
+O código-fonte do Mastra está dentro de `XpertIA/`:
+
+```
+XpertIA/
+src/mastra/
+├── index.ts       # Ponto de entrada
+├── agents/        # Definição de agents
+├── workflows/     # Fluxos de trabalho multi-etapa
+├── tools/         # Ferramentas reutilizáveis
+├── mcp/           # (opcional) Servidores MCP
+└── public/        # (opcional) Recursos estáticos
 ```
 
-> O Mastra Studio é a interface de desenvolvimento e consumo dos agents.
+---
 
-### Build
-
-Build para produção (gera servidor Node.js):
+## Comandos
 
 ```bash
+# Desenvolvimento (inicia Mastra Studio em localhost:4111)
+# Execute a partir da pasta XpertIA/
+cd XpertIA && ./scripts/mastra-studio.sh start   # Inicia Studio (conexão direta)
+./scripts/mastra-studio.sh status  # Verifica status
+./scripts/mastra-studio.sh stop    # Para Studio
+./scripts/mastra-studio.sh logs    # Logs em tempo real
+
+# Build e produção (execute de dentro de XpertIA/)
 pnpm run build
-```
-
-### Start
-
-Inicia o servidor em produção:
-
-```bash
 pnpm run start
 ```
 
 ---
 
-## Project Structure
+## Infraestrutura
 
-Folders organize your agent's resources, like agents, tools, and workflows.
+### PostgreSQL Remoto (Conexão Direta)
 
-| Folder | Description |
-|--------|-------------|
-| `src/mastra` | Entry point for all Mastra-related code and configuration. |
-| `src/mastra/agents` | Define and configure your agents - their behavior, goals, and tools. |
-| `src/mastra/workflows` | Define multi-step workflows that orchestrate agents and tools together. |
-| `src/mastra/tools` | Create reusable tools that your agents can call |
-| `src/mastra/mcp` | (Optional) Implement custom MCP servers to share your tools with external agents |
-| `src/mastra/scorers` | (Optional) Define scorers for evaluating agent performance over time |
-| `src/mastra/public` | (Optional) Contents are copied into the `.build/output` directory during the build process, making them available for serving at runtime |
+**ATUALIZAÇÃO:** A conexão ao PostgreSQL é feita **diretamente** via porta 5432 (SSL obrigatório).
 
-### Top-level files
+```bash
+./scripts/mastra-studio.sh start    # Inicia Studio (conexão direta ao VPS)
+./scripts/mastra-studio.sh status   # Verifica conexão
+```
 
-Top-level files define how your Mastra project is configured, built, and connected to its environment.
+- `DATABASE_URL` aponta diretamente para `5.189.185.146:5432` (com SSL)
+- **NÃO** é mais necessário túnel SSH
+- `.infra/docker/` é apenas referência — não execute `docker-compose` localmente
 
-| File | Description |
-|------|-------------|
-| `src/mastra/index.ts` | Central entry point where you configure and initialize Mastra. |
-| `.env` | Environment variables (API keys, configs). **Nunca commite este arquivo.** |
-| `.env.example` | Template para variáveis de ambiente. |
-| `package.json` | Defines project metadata, dependencies, and available npm scripts. |
-| `tsconfig.json` | Configures TypeScript options such as path aliases, compiler settings, and build output. |
-| `.infra/docker/` | Configuração Docker para PostgreSQL + pgvector. |
-| `.env.example` | Template para variáveis de ambiente (incluindo `DATABASE_URL`). |
+### 🗄️ Banco de Dados — PROIBIDO SEM AUTORIZAÇÃO
+
+- Criar/alterar/remover: colunas, tabelas, índices
+- Executar migrations ou sincronização de schema
+- **Detectou inconsistência?** → PARE e aguarde autorização
+
+### Armazenamento e Memória
+
+- **Storage**: `PostgresStore` (PostgreSQL + pgvector)
+- **Memory**: `@mastra/memory` com PostgreSQL
+- **Vector Store**: `PgVector` para embeddings
+- **Observability**: Traces no PostgreSQL (visualizáveis no Mastra Studio)
 
 ---
 
-## Architecture Notes
+## 🏗️ Infraestrutura como Código (`.infra/`)
 
-### Storage & Memory
+### O que é `.infra/`
 
-- **Storage**: `PostgresStore` com PostgreSQL + pgvector
-- **Memory**: `@mastra/memory` com PostgreSQL para persistência
-- **Vector Store**: `PgVector` para embeddings e busca semântica
-- **Observability**: Traces salvos no PostgreSQL para visualização no Mastra Studio
-- **Infraestrutura**: Docker Compose em `.infra/docker/`
+O diretório `.infra/` contém as **definições oficiais** de toda a infraestrutura do projeto:
 
-### Agents
+| Diretório | Conteúdo |
+|-----------|----------|
+| `.infra/postgreSQL/` | Scripts SQL para recriar o banco de dados |
+| `.infra/docker/` | Configurações Docker (referência apenas) |
 
-Os agents são definidos em `src/mastra/agents/` e registrados em `src/mastra/index.ts`.
+### 📝 Regras de Ouro
 
-Exemplo de configuração:
+1. **📁 Este é o local oficial**: Todas as definições de modificações no ambiente DEVEM estar em `.infra/`
+2. **🔄 Sempre atualize**: Quando houver mudança no ambiente, atualize os arquivos em `.infra/`
+3. **🔒 Autorização obrigatória**: Mudanças na infraestrutura PRECISAM ser **EXPLICITAMENTE autorizadas**
+
+### ❌ PROIBIDO sem autorização explícita:
+
+- Executar scripts SQL que modifiquem schema/tabelas
+- Criar/alterar/remover esquemas
+- Instalar/remover extensões do PostgreSQL
+- Modificar configurações de performance do banco
+- Alterar scripts em `.infra/` sem aprovação
+
+### ✅ Permitido (com documentação):
+
+- Adicionar novos scripts SQL em `.infra/postgreSQL/`
+- Criar índices adicionais (após aprovação)
+- Atualizar comentários em objetos existentes
+- Adicionar dados de seed
+
+### 🔄 Recriação do Ambiente
+
+Para recriar o banco de dados do zero:
+
+```bash
+# Executar scripts na ordem numérica
+psql -U postgres -d xpertia -f .infra/postgreSQL/01-extensions.sql
+psql -U xpertia -d xpertia -f .infra/postgreSQL/02-schemas.sql
+psql -U xpertia -d xpertia -f .infra/postgreSQL/03-pgvector-config.sql
+```
+
+---
+
+## Padrões de Código
+
+### Agent
 ```typescript
 export const myAgent = new Agent({
   id: 'my-agent',
   name: 'My Agent',
   instructions: `...`,
   model: 'groq/llama-3.3-70b-versatile',
-  memory: new Memory(), // Opcional: habilita memória conversacional
+  memory: new Memory(), // opcional
 });
 ```
 
-### Workflows
+### Workflow
+```typescript
+// src/mastra/workflows/ usando createWorkflow + createStep
+```
 
-Workflows são definidos em `src/mastra/workflows/` usando `createWorkflow` e `createStep`.
-
-### Tools
-
-Tools são criadas com `createTool` e podem ser usadas por agents ou workflows.
+### Tool
+```typescript
+// src/mastra/tools/ usando createTool
+```
 
 ---
 
-## Infrastructure Setup
+## 🛡️ Segurança
 
-### PostgreSQL com Docker
-
-O projeto utiliza PostgreSQL com extensão pgvector para storage e busca vetorial.
-
-#### 1. Iniciar a infraestrutura
-
-```bash
-cd .infra/docker
-cp .env.example .env
-# Edite .env se necessário
-docker-compose up -d
-```
-
-#### 2. Configurar variáveis de ambiente
-
-No arquivo `.env` do projeto (raiz):
-
-```bash
-DATABASE_URL=postgresql://mastra:mastra_secret@localhost:5432/xpertia
-```
-
-#### 3. Verificar conexão
-
-```bash
-docker-compose ps
-```
-
-#### 4. Parar a infraestrutura
-
-```bash
-docker-compose down
-```
-
-> Veja `.infra/docker/README.md` para mais detalhes.
+- Nunca faça commit do `.env`
+- Nunca exponha secrets em logs
+- Credenciais via `$VARIAVEL`
 
 ---
 
-## Mastra Skills
+## 📋 Tarefas
 
-Skills are modular capabilities that extend agent functionalities. They provide pre-built tools, integrations, and workflows that agents can leverage to accomplish tasks more effectively.
-
-This project has skills installed for the following agents:
-
-- Claude Code
-- Cursor
-
-### Loading Skills
-
-1. **Load the Mastra skill FIRST** - Use `/mastra` command or Skill tool
-2. **Never rely on cached knowledge** - Mastra APIs change frequently between versions
-3. **Always verify against current docs** - The skill provides up-to-date documentation
-
-**Why this matters:** Your training data about Mastra is likely outdated. Constructor signatures, APIs, and patterns change rapidly. Loading the skill ensures you use current, correct APIs.
-
-Skills are automatically available to agents in your project once installed. Agents can access and use these skills without additional configuration.
+Use `.task/[nome].md`:
+- Status: 🔄/✅/❌
+- Subtarefas: `- [ ]`
 
 ---
 
-## Resources
+## Checklist
 
-- [Mastra Documentation](https://mastra.ai/llms.txt)
-- [Mastra .well-known skills discovery](https://mastra.ai/.well-known/skills/index.json)
-- [Mastra Studio](http://localhost:4111) - Interface de desenvolvimento (rodando localmente)
+- [ ] Carregou a skill `/mastra`?
+- [ ] PostgreSQL acessível (`./scripts/mastra-studio.sh status`)?
+- [ ] Mastra Studio iniciado (`./scripts/mastra-studio.sh start`)?
+- [ ] Criou em `src/mastra/{agents,workflows,tools}/`?
+- [ ] Exportou em `src/mastra/index.ts`?
+- [ ] Não criou código de interface?
+- [ ] Atualizou `.infra/` se modificou o ambiente?
+- [ ] Tem autorização explícita para mudanças na infra?
 
 ---
 
-## Checklist para Novos Agents
+## Recursos
 
-Ao criar um novo agent, workflow ou tool:
-
-- [ ] Carregou a skill `/mastra` antes de começar?
-- [ ] PostgreSQL está rodando (`docker-compose -f .infra/docker/docker-compose.yml ps`)?
-- [ ] Definiu o agent/workflow/tool no arquivo apropriado em `src/mastra/`?
-- [ ] Exportou e registrou em `src/mastra/index.ts`?
-- [ ] Testou via Mastra Studio (`pnpm run dev`)?
-- [ ] **NÃO** criou código de UI/frontend?
+- [Documentação do Mastra](https://mastra.ai/llms.txt)
+- [Mastra Studio](http://localhost:4111)

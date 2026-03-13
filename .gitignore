@@ -1,0 +1,47 @@
+# ============================================================
+# XpertIA - Git Ignore
+# ============================================================
+
+# Ambiente
+.env
+.env.local
+.env.*.local
+
+# Dependências
+node_modules/
+.pnpm-store/
+
+# Build
+.build/
+dist/
+*.tsbuildinfo
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Keys e credenciais
+.key/
+*.pem
+*.key
+*.pub
+!*.pub.example
+
+# Mastra
+.mastra/
+
+# Temp
+/tmp/
+temp/
+*.tmp

@@ -1,1 +1,0 @@
-pnpm dlx create-mastra@latest XpertIA -- --template coding-agent
