@@ -19,6 +19,9 @@ import * as path from 'path';
 /**
  * Resolve o caminho do arquivo tentando múltiplas estratégias
  * O Mastra pode executar de diretórios diferentes, então tentamos várias opções
+ * 
+ * DIRETÓRIO OFICIAL DE UPLOADS: XpertIA/workspace/uploads/
+ * Todo arquivo para leitura DEVE estar em workspace/uploads/ ou workspace/outputs/
  */
 async function resolveFilePath(filePath: string): Promise<{ fullPath: string; attempted: string[] }> {
   const attempted: string[] = [];
@@ -29,24 +32,42 @@ async function resolveFilePath(filePath: string): Promise<{ fullPath: string; at
   }
   
   // Estratégias para resolver o caminho (em ordem de prioridade)
-  // IMPORTANTE: Em mastra dev, process.cwd() é src/mastra/public/
-  // Precisamos subir 3 níveis (../../../) para chegar na raiz do projeto
+  // IMPORTANTE: O diretório de trabalho oficial é XpertIA/
+  // O arquivo deve estar em XpertIA/workspace/uploads/ ou XpertIA/workspace/outputs/
+  
+  // Detectar a raiz do projeto (onde está a pasta workspace/)
+  const cwd = process.cwd();
+  const isInSrcMastra = cwd.includes('/src/mastra') || cwd.includes('\\src\\mastra');
+  
   const strategies = [
-    // 1. A partir da raiz do projeto (quando cwd é a raiz)
-    path.resolve(process.cwd(), 'workspace', filePath),
-    // 2. Subindo 3 níveis a partir de src/mastra/public/ (mastra dev)
-    path.resolve(process.cwd(), '../../../workspace', filePath),
+    // 1. Se estamos em src/mastra/public/ ou similar, subir até a raiz do projeto
+    isInSrcMastra ? path.resolve(cwd, '../../../workspace', filePath) : null,
+    // 2. Caminho absoluto direto à partir da raiz do projeto detectada
+    path.resolve(cwd, '../../workspace', filePath),
     // 3. Direto como está (se já incluir workspace/)
-    path.resolve(process.cwd(), filePath),
-    // 4. Subindo 3 níveis + caminho direto
-    path.resolve(process.cwd(), '../../..', filePath),
-  ];
+    path.resolve(cwd, filePath),
+    // 4. A partir da raiz do projeto (quando cwd é XpertIA/)
+    path.resolve(cwd, 'workspace', filePath),
+    // 5. Subindo 1 nível (se cwd for XpertIA/src/mastra/)
+    path.resolve(cwd, '../workspace', filePath),
+    // 6. Subindo 2 níveis (se cwd for XpertIA/src/mastra/tools/)
+    path.resolve(cwd, '../../workspace', filePath),
+    // 7. A partir do diretório do arquivo atual (__dirname)
+    path.resolve(__dirname, '../../workspace', filePath),
+    // 8. Usando import.meta.url (ES modules)
+    path.resolve(new URL('.', import.meta.url).pathname, '../../workspace', filePath),
+    // 9. Subindo 3 níveis + caminho direto
+    path.resolve(cwd, '../../..', filePath),
+    // 10. Diretamente no workspace/ (para compatibilidade)
+    path.resolve(cwd, '../..', filePath),
+  ].filter((s): s is string => s !== null);  // Remove nulls
   
   for (const candidate of strategies) {
     attempted.push(candidate);
     try {
       await fs.access(candidate);
       // Arquivo encontrado!
+      console.log(`[resolveFilePath] ✅ Arquivo encontrado: ${candidate}`);
       return { fullPath: candidate, attempted };
     } catch {
       // Não existe neste caminho, tentar próximo
@@ -60,9 +81,9 @@ async function resolveFilePath(filePath: string): Promise<{ fullPath: string; at
 
 export const readPDFTool = createTool({
   id: 'read-pdf',
-  description: 'Extrai texto de arquivos PDF com suporte a seleção de páginas. O caminho deve ser relativo à pasta workspace/ (ex: uploads/arquivo.pdf)',
+  description: 'Extrai texto de arquivos PDF. IMPORTANTE: Os arquivos devem estar em XpertIA/workspace/uploads/. Use caminho relativo a workspace/ (ex: uploads/arquivo.pdf)',
   inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo PDF relativo à pasta workspace/ (ex: uploads/arquivo.pdf)'),
+    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/Lei_8112_1ed.pdf). O arquivo DEVE estar em XpertIA/workspace/uploads/'),
     startPage: z.number().optional().describe('Página inicial (1-indexed, padrão: 1)'),
     endPage: z.number().optional().describe('Página final (inclusive, padrão: última)'),
   }),
@@ -108,11 +129,16 @@ export const readPDFTool = createTool({
           text: '',
           metadata: { totalPages: 0, extractedPages: 0, fileName },
           error: `❌ ARQUIVO NÃO ENCONTRADO: '${filePath}'\n\n` +
-                 `Caminhos tentados:\n` +
+                 `📁 DIRETÓRIO OFICIAL: XpertIA/workspace/uploads/\n\n` +
+                 `✅ COMO USAR:\n` +
+                 `  • Coloque o arquivo em: XpertIA/workspace/uploads/\n` +
+                 `  • Use o caminho: uploads/nome-do-arquivo.pdf\n\n` +
+                 `🔍 Caminhos tentados:\n` +
                  attempted.map((p, i) => `  ${i + 1}. ${p}`).join('\n') + `\n\n` +
-                 `Verifique:\n` +
-                 `  • O arquivo existe em workspace/uploads/?\n` +
+                 `⚠️  Verifique:\n` +
+                 `  • O arquivo existe em XpertIA/workspace/uploads/?\n` +
                  `  • O nome do arquivo está correto (incluindo maiúsculas/minúsculas)?\n` +
+                 `  • Você usou o formato: uploads/nome-do-arquivo.pdf?\n` +
                  `  • process.cwd() atual: ${process.cwd()}`,
         };
       }
@@ -147,9 +173,9 @@ export const readPDFTool = createTool({
           reject(new Error('Timeout ao processar PDF (>15s)'));
         }, 15000);
         
-        pdfParser.on('pdfParser_dataError', (errData) => {
+        pdfParser.on('pdfParser_dataError', (errData: any) => {
           clearTimeout(timeoutId);
-          const errorMsg = errData.parserError || 'Erro desconhecido ao parsear PDF';
+          const errorMsg = errData?.parserError?.message || errData?.parserError || 'Erro desconhecido ao parsear PDF';
           reject(new Error(`PDF parse error: ${errorMsg}`));
         });
         
@@ -262,9 +288,9 @@ export const readPDFTool = createTool({
 
 export const readDOCXTool = createTool({
   id: 'read-docx',
-  description: 'Extrai texto de documentos Word (.docx) mantendo estrutura',
+  description: 'Extrai texto de documentos Word (.docx). IMPORTANTE: Os arquivos devem estar em XpertIA/workspace/uploads/. Use caminho relativo a workspace/ (ex: uploads/arquivo.docx)',
   inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo DOCX relativo à pasta workspace/'),
+    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/documento.docx). O arquivo DEVE estar em XpertIA/workspace/uploads/'),
     extractHtml: z.boolean().optional().describe('Retornar conteúdo em HTML (padrão: false)'),
   }),
   outputSchema: z.object({
@@ -336,16 +362,16 @@ export const readDOCXTool = createTool({
 
 export const readExcelTool = createTool({
   id: 'read-excel',
-  description: 'Lê planilhas Excel (.xlsx, .xls) e CSV, retorna dados como array de objetos',
+  description: 'Lê planilhas Excel (.xlsx, .xls) e CSV. IMPORTANTE: Os arquivos devem estar em XpertIA/workspace/uploads/. Use caminho relativo a workspace/ (ex: uploads/planilha.xlsx)',
   inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo Excel/CSV relativo à pasta workspace/'),
+    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/dados.xlsx). O arquivo DEVE estar em XpertIA/workspace/uploads/'),
     sheetName: z.string().optional().describe('Nome da sheet (padrão: primeira sheet)'),
     range: z.string().optional().describe('Range de células (ex: A1:D10)'),
     headerRow: z.number().optional().describe('Linha do header (1-indexed, padrão: 1)'),
   }),
   outputSchema: z.object({
     success: z.boolean(),
-    data: z.array(z.record(z.any())),
+    data: z.array(z.record(z.string(), z.any())),
     summary: z.object({
       totalRows: z.number(),
       totalColumns: z.number(),
@@ -381,7 +407,7 @@ export const readExcelTool = createTool({
       
       // Extrair nomes das colunas
       const columnNames = worksheet['!ref'] 
-        ? XLSX.utils.sheet_to_json(worksheet, { header: 1, range: context.range })[0] as string[]
+        ? XLSX.utils.sheet_to_json(worksheet, { header: 1, range })[0] as string[]
         : [];
       
       const summary = {
@@ -529,7 +555,7 @@ export const writeExcelTool = createTool({
     outputPath: z.string().describe('Caminho relativo à pasta workspace/outputs/'),
     sheets: z.array(z.object({
       name: z.string().describe('Nome da sheet'),
-      data: z.array(z.record(z.any())).describe('Array de objetos (cada objeto é uma linha)'),
+      data: z.array(z.record(z.string(), z.any())).describe('Array de objetos (cada objeto é uma linha)'),
     })),
   }),
   outputSchema: z.object({
@@ -594,6 +620,128 @@ export const writeExcelTool = createTool({
   },
 });
 
+// ============================================
+// LIST WORKSPACE FILES TOOL
+// ============================================
+
+export const listWorkspaceFilesTool = createTool({
+  id: 'list-workspace-files',
+  description: 'Lista todos os arquivos disponíveis no diretório workspace/uploads/ e workspace/outputs/',
+  inputSchema: z.object({
+    directory: z.enum(['uploads', 'outputs', 'all']).optional().describe('Diretório a listar (padrão: all)'),
+    extension: z.string().optional().describe('Filtrar por extensão (ex: .pdf, .docx)'),
+  }),
+  outputSchema: z.object({
+    success: z.boolean(),
+    files: z.array(z.object({
+      name: z.string(),
+      path: z.string(),
+      size: z.number(),
+      modified: z.string(),
+      extension: z.string(),
+    })),
+    totalCount: z.number(),
+    directories: z.array(z.string()),
+    error: z.string().optional(),
+  }),
+  execute: async ({ 
+    directory = 'all',
+    extension 
+  }: { 
+    directory?: 'uploads' | 'outputs' | 'all';
+    extension?: string;
+  }) => {
+    const attemptedDirs: string[] = [];
+    const allFiles: Array<{
+      name: string;
+      path: string;
+      size: number;
+      modified: string;
+      extension: string;
+    }> = [];
+    
+    const dirsToList: string[] = [];
+    
+    if (directory === 'all' || directory === 'uploads') {
+      dirsToList.push('uploads');
+    }
+    if (directory === 'all' || directory === 'outputs') {
+      dirsToList.push('outputs');
+    }
+    
+    for (const dir of dirsToList) {
+      // Tentar múltiplas estratégias para encontrar o diretório
+      const strategies = [
+        path.resolve(process.cwd(), 'workspace', dir),
+        path.resolve(process.cwd(), '../workspace', dir),
+        path.resolve(process.cwd(), '../../workspace', dir),
+        path.resolve(process.cwd(), '../../../workspace', dir),
+        path.resolve(__dirname, '../../workspace', dir),
+      ];
+      
+      let foundDir: string | null = null;
+      
+      for (const candidate of strategies) {
+        attemptedDirs.push(candidate);
+        try {
+          const stats = await fs.stat(candidate);
+          if (stats.isDirectory()) {
+            foundDir = candidate;
+            break;
+          }
+        } catch {
+          continue;
+        }
+      }
+      
+      if (!foundDir) {
+        continue; // Diretório não encontrado, tentar próximo
+      }
+      
+      try {
+        const entries = await fs.readdir(foundDir, { withFileTypes: true });
+        
+        for (const entry of entries) {
+          if (entry.isFile()) {
+            const fileExt = path.extname(entry.name).toLowerCase();
+            
+            // Filtrar por extensão se especificado
+            if (extension && !entry.name.toLowerCase().endsWith(extension.toLowerCase())) {
+              continue;
+            }
+            
+            const filePath = path.join(foundDir, entry.name);
+            const stats = await fs.stat(filePath);
+            
+            allFiles.push({
+              name: entry.name,
+              path: `workspace/${dir}/${entry.name}`,
+              size: stats.size,
+              modified: stats.mtime.toISOString(),
+              extension: fileExt,
+            });
+          }
+        }
+      } catch (error) {
+        console.error(`[listWorkspaceFilesTool] Erro ao ler ${dir}:`, error);
+      }
+    }
+    
+    // Ordenar por data de modificação (mais recente primeiro)
+    allFiles.sort((a, b) => new Date(b.modified).getTime() - new Date(a.modified).getTime());
+    
+    return {
+      success: allFiles.length > 0,
+      files: allFiles,
+      totalCount: allFiles.length,
+      directories: [...new Set(allFiles.map(f => path.dirname(f.path)))],
+      error: allFiles.length === 0 ? 
+        `Nenhum arquivo encontrado em workspace/${directory}/. Diretórios tentados: ${attemptedDirs.join(', ')}` : 
+        undefined,
+    };
+  },
+});
+
 // Exportar todas as tools
 export const fileTools = {
   readPDFTool,
@@ -601,4 +749,5 @@ export const fileTools = {
   readExcelTool,
   writeDOCXTool,
   writeExcelTool,
+  listWorkspaceFilesTool,
 };

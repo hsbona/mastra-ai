@@ -86,11 +86,12 @@ src/mastra/
 
 ```bash
 # Desenvolvimento (inicia Mastra Studio em localhost:4111)
-# Execute a partir da pasta XpertIA/
-cd XpertIA && ./scripts/mastra-studio.sh start   # Inicia Studio (conexão direta)
-./scripts/mastra-studio.sh status  # Verifica status
-./scripts/mastra-studio.sh stop    # Para Studio
-./scripts/mastra-studio.sh logs    # Logs em tempo real
+cd XpertIA && ../scripts/mastra-studio.sh start   # Inicia Studio (conexão direta)
+../scripts/mastra-studio.sh status  # Verifica status
+../scripts/mastra-studio.sh stop    # Para Studio
+../scripts/mastra-studio.sh logs    # Logs em tempo real
+
+> 📝 **Arquivo de log:** `/tmp/mastra-studio.log`
 
 # Build e produção (execute de dentro de XpertIA/)
 pnpm run build
@@ -106,8 +107,8 @@ pnpm run start
 **ATUALIZAÇÃO:** A conexão ao PostgreSQL é feita **diretamente** via porta 5432 (SSL obrigatório).
 
 ```bash
-./scripts/mastra-studio.sh start    # Inicia Studio (conexão direta ao VPS)
-./scripts/mastra-studio.sh status   # Verifica conexão
+../scripts/mastra-studio.sh start    # Inicia Studio (conexão direta ao VPS)
+../scripts/mastra-studio.sh status   # Verifica conexão
 ```
 
 - `DATABASE_URL` aponta diretamente para `5.189.185.146:5432` (com SSL)
