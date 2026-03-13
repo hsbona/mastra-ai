@@ -58,7 +58,7 @@ DIRETRIZES:
 
 FORMATO: Parágrafos contínuos em português.
 `,
-  model: 'groq/llama-3.3-70b-versatile',
+  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
 });
 
 const reduceSummarizerAgent = new Agent({
@@ -85,7 +85,7 @@ ESTRUTURA DO RESUMO EXECUTIVO:
 
 FORMATO: Markdown estruturado em português.
 `,
-  model: 'groq/llama-3.3-70b-versatile',
+  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
 });
 
 // ============================================

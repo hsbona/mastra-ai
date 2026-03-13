@@ -37,7 +37,6 @@ export { systemTools };
 export { 
   documentProcessingTools,
   estimateTokens,
-  selectProcessingStrategy,
   semanticChunking,
 } from './tools/document-processing-tools';
 

@@ -19,26 +19,41 @@ export interface ModelConfig {
  * Valores baseados na documentação oficial dos provedores
  */
 export const MODEL_CONFIGS: Record<string, ModelConfig> = {
+  // ============================================
+  // MODELO PRINCIPAL - Llama 4 Scout (Recomendado)
+  // Contexto 16x maior, 82% mais barato que Llama 3.3 70B
+  // ============================================
+  'meta-llama/llama-4-scout-17b-16e-instruct': {
+    id: 'meta-llama/llama-4-scout-17b-16e-instruct',
+    name: 'Llama 4 Scout 17B (Groq)',
+    contextWindow: 128000,   // 128k tokens = ~320 páginas
+    safeDocumentRatio: 0.70, // 70% para documento (contexto grande)
+    overheadTokens: 2000,    // Overhead para orquestração + tools
+  },
+  
+  // ============================================
+  // MODELOS ALTERNATIVOS
+  // ============================================
   'groq/llama-3.3-70b-versatile': {
     id: 'groq/llama-3.3-70b-versatile',
     name: 'Llama 3.3 70B (Groq)',
     contextWindow: 8192,
-    safeDocumentRatio: 0.65, // Usar apenas 65% para documento
-    overheadTokens: 1500,    // Reservar 1500 tokens para overhead
+    safeDocumentRatio: 0.65,
+    overheadTokens: 1500,
   },
   'groq/llama-3.1-8b-instant': {
     id: 'groq/llama-3.1-8b-instant',
     name: 'Llama 3.1 8B (Groq)',
-    contextWindow: 8192,
-    safeDocumentRatio: 0.65,
+    contextWindow: 128000,   // 128k contexto
+    safeDocumentRatio: 0.70,
     overheadTokens: 1500,
   },
-  'groq/llama-3.1-70b-versatile': {
-    id: 'groq/llama-3.1-70b-versatile',
-    name: 'Llama 3.1 70B (Groq)',
-    contextWindow: 8192,
-    safeDocumentRatio: 0.65,
-    overheadTokens: 1500,
+  'qwen/qwen3-32b': {
+    id: 'qwen/qwen3-32b',
+    name: 'Qwen3 32B (Groq)',
+    contextWindow: 131000,   // 131k tokens
+    safeDocumentRatio: 0.70,
+    overheadTokens: 1800,    // Reasoning consome mais overhead
   },
   'openai/gpt-4o': {
     id: 'openai/gpt-4o',
@@ -58,8 +73,20 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
 
 /**
  * Modelo padrão do projeto
+ * 
+ * ATUALIZAÇÃO: Llama 4 Scout é o novo modelo padrão
+ * - Contexto 16x maior (128k vs 8k)
+ * - 82% mais barato ($0.11 vs $0.59/M input)
+ * - Processa ~320 páginas sem chunking
+ * - Orquestração via Mastra (não precisa tool use nativo)
  */
-export const DEFAULT_MODEL = 'groq/llama-3.3-70b-versatile';
+export const DEFAULT_MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
+
+/**
+ * Modelo legado (para referência/fallback)
+ * @deprecated Use DEFAULT_MODEL (Llama 4 Scout) em vez disso
+ */
+export const LEGACY_MODEL = 'llama-3.3-70b-versatile';
 
 /**
  * Obtém a configuração de um modelo

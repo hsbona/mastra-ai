@@ -42,7 +42,7 @@ export function estimateTokens(text: string): number {
  * AGORA CONSIDERA O MODELO E LIMITE DE CONTEXTO!
  * 
  * @param tokenCount - Número estimado de tokens no documento
- * @param modelId - ID do modelo (default: groq/llama-3.3-70b-versatile)
+ * @param modelId - ID do modelo (default: meta-llama/llama-4-scout-17b-16e-instruct)
  * @param operation - Tipo de operação (afeta overhead)
  * @param glossarySize - Tamanho do glossário (se houver)
  */
@@ -66,7 +66,7 @@ export const estimateTokensTool = createTool({
   description: 'Estima a quantidade de tokens em um texto para decidir estratégia de processamento',
   inputSchema: z.object({
     text: z.string().describe('Texto para estimar tokens'),
-    modelId: z.string().optional().describe('ID do modelo (default: groq/llama-3.3-70b-versatile)'),
+    modelId: z.string().optional().describe('ID do modelo (default: meta-llama/llama-4-scout-17b-16e-instruct)'),
     operation: z.enum(['summarize', 'translate', 'analyze']).optional().describe('Tipo de operação'),
   }),
   outputSchema: z.object({

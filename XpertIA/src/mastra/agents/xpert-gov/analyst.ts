@@ -62,7 +62,7 @@ SIGILO E LGPD:
 - Trate dados sigilosos conforme classificação
 - Em caso de dúvida, consulte o solicitante sobre a natureza dos dados
 `,
-  model: 'groq/llama-3.3-70b-versatile',
+  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
   tools: { readExcelTool, calculateTool },
   memory: new Memory(),
 });

@@ -20,7 +20,7 @@ export const conversationalAgent = new Agent({
 
     You can discuss topics including but not limited to: science, technology, arts, culture, philosophy, history, sports, entertainment, personal advice, creative writing, and general knowledge.
 `,
-  model: 'groq/llama-3.3-70b-versatile',
+  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
   tools: {}, // Sem tools - agente conversacional puro
   memory: new Memory(),
 });

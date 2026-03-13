@@ -22,7 +22,7 @@ export const translationScorer = createScorer({
     'Checks that non-English location names are translated and used correctly',
   type: 'agent',
   judge: {
-    model: 'groq/llama-3.3-70b-versatile',
+    model: 'meta-llama/llama-4-scout-17b-16e-instruct',
     instructions:
       'You are an expert evaluator of translation quality for geographic locations. ' +
       'Determine whether the user text mentions a non-English location and whether the assistant correctly uses an English translation of that location. ' +

@@ -76,7 +76,7 @@ Para cada termo, indique:
 Retorne apenas JSON:
 {"terms": [{"original": "...", "translation": "...", "type": "..."}]}
 `,
-  model: 'groq/llama-3.3-70b-versatile',
+  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
 });
 
 const translatorAgent = new Agent({
@@ -94,7 +94,7 @@ DIRETRIZES:
 
 Use o contexto fornecido para manter continuidade.
 `,
-  model: 'groq/llama-3.3-70b-versatile',
+  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
 });
 
 // ============================================

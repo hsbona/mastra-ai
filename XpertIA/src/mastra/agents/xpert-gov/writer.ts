@@ -85,7 +85,7 @@ Antes de finalizar, verifique:
 □ A numeração segue a sequência correta
 □ O documento responde ao solicitado
 `,
-  model: 'groq/llama-3.3-70b-versatile',
+  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
   tools: { writeDOCXTool },
   memory: new Memory(),
 });

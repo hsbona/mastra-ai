@@ -36,5 +36,5 @@ RESTRIÇÕES:
 - Use ReadFile com line_offset e n_lines para ler por partes
 - Mantenha o resumo dentro de 300-500 tokens
 `,
-  model: 'groq/llama-3.3-70b-versatile',
+  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
 });
