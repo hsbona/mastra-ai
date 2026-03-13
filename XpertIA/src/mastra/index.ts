@@ -7,6 +7,7 @@ import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
 import { weatherWorkflow } from './workflows/weather-workflow';
 import { weatherAgent } from './agents/weather-agent';
 import { conversationalAgent } from './agents/conversational-agent';
+import { fileSummarizerAgent } from './agents/file-summarizer';
 import { researchAgent } from './agents/shared/research';
 import { docProcessorAgent } from './agents/shared/doc-processor';
 import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
@@ -65,6 +66,7 @@ export const mastra = new Mastra({
   agents: { 
     weatherAgent, 
     conversationalAgent,
+    fileSummarizerAgent,
     researchAgent,
     docProcessorAgent,
     xpertGovAnalystAgent,

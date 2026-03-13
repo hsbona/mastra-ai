@@ -239,9 +239,9 @@ export const deleteWorkspaceItemTool = createTool({
 export const getFileInfoTool = createTool({
   id: 'get-file-info',
   name: 'Get File Info',
-  description: 'Obtém informações detalhadas sobre um arquivo (tamanho, datas, tipo)',
+  description: 'Obtém informações detalhadas sobre um arquivo (tamanho, datas, tipo). Aceita caminhos absolutos ou relativos ao workspace.',
   inputSchema: z.object({
-    path: z.string().describe('Caminho do arquivo (relativo ao workspace)'),
+    path: z.string().describe('Caminho do arquivo (absoluto ou relativo ao workspace)'),
   }),
   outputSchema: z.object({
     success: z.boolean(),
@@ -257,7 +257,8 @@ export const getFileInfoTool = createTool({
   }),
   execute: async ({ context }) => {
     try {
-      const fullPath = path.join('./workspace', context.path);
+      const isAbsolute = path.isAbsolute(context.path);
+      const fullPath = isAbsolute ? context.path : path.join('./workspace', context.path);
       
       const stats = await fs.stat(fullPath);
       
@@ -367,6 +368,98 @@ export const moveFileTool = createTool({
 });
 
 // ============================================
+// READ TEXT FILE TOOL (com chunking support)
+// ============================================
+
+export const readTextFileTool = createTool({
+  id: 'read-text-file',
+  name: 'Read Text File',
+  description: 'Lê arquivos de texto (log, txt, md, json, etc.) com suporte a leitura parcial (chunking). Aceita caminhos absolutos ou relativos ao workspace.',
+  inputSchema: z.object({
+    path: z.string().describe('Caminho do arquivo (absoluto ou relativo ao workspace)'),
+    lineOffset: z.number().optional().default(1).describe('Linha inicial (1-indexed, padrão: 1)'),
+    lineCount: z.number().optional().default(100).describe('Número de linhas a ler (padrão: 100, máx: 500)'),
+    encoding: z.string().optional().default('utf-8').describe('Codificação do arquivo (padrão: utf-8)'),
+  }),
+  outputSchema: z.object({
+    success: z.boolean(),
+    content: z.string(),
+    metadata: z.object({
+      filePath: z.string(),
+      totalLines: z.number(),
+      lineOffset: z.number(),
+      linesRead: z.number(),
+      hasMore: z.boolean(),
+      fileSize: z.number(),
+    }),
+    error: z.string().optional(),
+  }),
+  execute: async ({ context }) => {
+    try {
+      // Determinar caminho completo
+      const isAbsolute = path.isAbsolute(context.path);
+      const fullPath = isAbsolute ? context.path : path.join('./workspace', context.path);
+      
+      // Verificar se arquivo existe
+      let stats;
+      try {
+        stats = await fs.stat(fullPath);
+      } catch {
+        return {
+          success: false,
+          content: '',
+          metadata: { filePath: context.path, totalLines: 0, lineOffset: 0, linesRead: 0, hasMore: false, fileSize: 0 },
+          error: `Arquivo não encontrado: ${context.path}`,
+        };
+      }
+      
+      if (!stats.isFile()) {
+        return {
+          success: false,
+          content: '',
+          metadata: { filePath: context.path, totalLines: 0, lineOffset: 0, linesRead: 0, hasMore: false, fileSize: 0 },
+          error: `O caminho não é um arquivo: ${context.path}`,
+        };
+      }
+      
+      // Ler arquivo completo para contar linhas totais
+      const fileContent = await fs.readFile(fullPath, { encoding: context.encoding as BufferEncoding });
+      const allLines = fileContent.split('\n');
+      const totalLines = allLines.length;
+      
+      // Calcular range de leitura
+      const startLine = Math.max(1, context.lineOffset);
+      const maxLines = Math.min(500, context.lineCount);
+      const endLine = Math.min(startLine + maxLines - 1, totalLines);
+      
+      // Extrair linhas solicitadas
+      const linesToRead = allLines.slice(startLine - 1, endLine);
+      const content = linesToRead.join('\n');
+      
+      return {
+        success: true,
+        content,
+        metadata: {
+          filePath: context.path,
+          totalLines,
+          lineOffset: startLine,
+          linesRead: linesToRead.length,
+          hasMore: endLine < totalLines,
+          fileSize: stats.size,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        content: '',
+        metadata: { filePath: context.path, totalLines: 0, lineOffset: 0, linesRead: 0, hasMore: false, fileSize: 0 },
+        error: error instanceof Error ? error.message : 'Erro desconhecido ao ler arquivo',
+      };
+    }
+  },
+});
+
+// ============================================
 // EXPORTAÇÕES
 // ============================================
 
@@ -376,4 +469,5 @@ export const systemTools = {
   deleteWorkspaceItemTool,
   getFileInfoTool,
   moveFileTool,
+  readTextFileTool,
 };

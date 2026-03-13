@@ -141,6 +141,9 @@ Usuário: "Oi, tudo bem?"
 
   model: 'groq/llama-3.3-70b-versatile',
 
+  // Sem tools diretas - apenas delega para subagentes
+  tools: {},
+
   // ==========================================
   // SUBAGENTES REGISTRADOS
   // ==========================================
