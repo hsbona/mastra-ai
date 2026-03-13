@@ -170,6 +170,10 @@ export const createAnalyzeStrategyStep = (
 // ============================================
 // STEP 3: CHUNK DOCUMENT
 // ============================================
+// IMPORTANTE: SEMPRE fazemos chunking, independente do tamanho do documento.
+// O cliente pode escolher qualquer modelo, então sempre dividimos o documento
+// em partes menores. O chunkSize é calculado baseado na janela de contexto
+// do modelo selecionado.
 
 export const createChunkingStep = (stepId: string = 'chunk-document') => createStep({
   id: stepId,
@@ -178,31 +182,16 @@ export const createChunkingStep = (stepId: string = 'chunk-document') => createS
   execute: async ({ inputData }) => {
     const { text, strategy, chunkSize, overlap, fileName, tokenCount } = inputData;
     
-    if (strategy === 'direct') {
-      // Documento pequeno - um único "chunk"
-      return {
-        chunks: [{
-          content: text,
-          index: 0,
-          metadata: {
-            wordCount: text.split(/\s+/).filter(w => w.length > 0).length,
-            estimatedTokens: tokenCount,
-          },
-        }],
-        fileName,
-        tokenCount,
-        strategy,
-      };
-    }
-    
-    // Documento grande - fazer chunking
+    // SEMPRE fazer chunking, mesmo para documentos pequenos
+    // O chunkSize já foi calculado baseado no modelo selecionado
     const chunks = await semanticChunking(text, {
       chunkSize,
       overlap,
       preserveParagraphs: true,
     });
     
-    console.log(`[DocumentWorkflow] Criados ${chunks.length} chunks`);
+    console.log(`[DocumentWorkflow] Documento dividido em ${chunks.length} chunk(s)`);
+    console.log(`[DocumentWorkflow] Tamanho do chunk: ${chunkSize} tokens (baseado no modelo)`);
     
     return {
       chunks,
