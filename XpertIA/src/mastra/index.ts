@@ -4,12 +4,8 @@ import { PostgresStore } from '@mastra/pg';
 import { pgVector } from './vector-store';
 import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } from '@mastra/observability';
 import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
-import { weatherWorkflow } from './workflows/weather-workflow';
 import { documentSummarizeWorkflow } from './workflows/document-summarize-workflow';
 import { documentTranslateWorkflow } from './workflows/document-translate-workflow';
-import { weatherAgent } from './agents/weather-agent';
-import { conversationalAgent } from './agents/conversational-agent';
-import { fileSummarizerAgent } from './agents/file-summarizer';
 import { researchAgent } from './agents/shared/research';
 import { docProcessorAgent } from './agents/shared/doc-processor';
 import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
@@ -98,14 +94,10 @@ const storage = new PostgresStore({
 // ============================================
 export const mastra = new Mastra({
   workflows: { 
-    weatherWorkflow,
     documentSummarizeWorkflow,
     documentTranslateWorkflow,
   },
   agents: { 
-    weatherAgent, 
-    conversationalAgent,
-    fileSummarizerAgent,
     researchAgent,
     docProcessorAgent,
     xpertGovAnalystAgent,

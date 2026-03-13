@@ -11,6 +11,7 @@ import {
   selectStrategyForModel, 
   calculateSafeChunkSize,
   estimateOperationOverhead,
+  getModelConfig,
   DEFAULT_MODEL 
 } from '../config/model-config';
 
@@ -90,6 +91,7 @@ export const estimateTokensTool = createTool({
     const tokenCount = estimateTokens(text);
     const strategy = selectProcessingStrategy(tokenCount, modelId, operation);
     const safeChunkSize = calculateSafeChunkSize(modelId);
+    const modelConfig = getModelConfig(modelId);
     
     return {
       tokenCount,
@@ -97,7 +99,7 @@ export const estimateTokensTool = createTool({
       chunkSize: strategy.chunkSize,
       overlap: strategy.overlap,
       description: strategy.description,
-      modelContextWindow: 8192, // Llama 3.3 70B
+      modelContextWindow: modelConfig.contextWindow,
       safeChunkSize,
     };
   },

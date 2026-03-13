@@ -193,7 +193,7 @@ ${content.slice(0, 15000)}${content.length > 15000 ? '\n\n[Content truncated due
 Summary:`;
 
       const result = await generateText({
-        model: groq('llama-3.3-70b-versatile'),
+        model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
         prompt,
         temperature: 0.3,
         maxTokens: maxLength ? Math.min(Math.ceil(maxLength / 4), 2000) : 1000,
