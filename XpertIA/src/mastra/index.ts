@@ -5,6 +5,8 @@ import { pgVector } from './vector-store';
 import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } from '@mastra/observability';
 import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
 import { weatherWorkflow } from './workflows/weather-workflow';
+import { documentSummarizeWorkflow } from './workflows/document-summarize-workflow';
+import { documentTranslateWorkflow } from './workflows/document-translate-workflow';
 import { weatherAgent } from './agents/weather-agent';
 import { conversationalAgent } from './agents/conversational-agent';
 import { fileSummarizerAgent } from './agents/file-summarizer';
@@ -30,6 +32,28 @@ export { queryRAGTool, listIndexesTool } from './tools/rag-tools';
 export { fileTools };
 export { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool };
 export { systemTools };
+
+// Exportar tools de processamento de documentos
+export { 
+  documentProcessingTools,
+  estimateTokens,
+  selectProcessingStrategy,
+  semanticChunking,
+} from './tools/document-processing-tools';
+
+// Exportar workflows de processamento de documentos
+export { documentSummarizeWorkflow, mapSummarizerAgent, reduceSummarizerAgent } from './workflows/document-summarize-workflow';
+export { documentTranslateWorkflow, glossaryExtractorAgent, translatorAgent } from './workflows/document-translate-workflow';
+
+// Exportar steps compartilhados
+export {
+  extractTextStep,
+  analyzeStrategyStep,
+  chunkDocumentStep,
+  createExtractTextStep,
+  createAnalyzeStrategyStep,
+  createChunkingStep,
+} from './workflows/shared/document-steps';
 
 // Exportar agentes especializados
 export { researchAgent, docProcessorAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
@@ -62,7 +86,11 @@ const storage = new PostgresStore({
 // MASTRA INSTANCE
 // ============================================
 export const mastra = new Mastra({
-  workflows: { weatherWorkflow },
+  workflows: { 
+    weatherWorkflow,
+    documentSummarizeWorkflow,
+    documentTranslateWorkflow,
+  },
   agents: { 
     weatherAgent, 
     conversationalAgent,
@@ -76,7 +104,7 @@ export const mastra = new Mastra({
   scorers: { toolCallAppropriatenessScorer, completenessScorer, translationScorer },
   workspace,
   storage,
-  vector: pgVector,  // Vector store para RAG
+  vectors: { pgVector },  // Vector store para RAG
   logger: new PinoLogger({
     name: 'Mastra',
     level: 'info',

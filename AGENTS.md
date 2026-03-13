@@ -6,18 +6,21 @@ Guia para agentes de IA trabalhando neste repositório.
 
 ## ⚠️ REGRAS CRÍTICAS
 
+> 🥇 **REGRA DE OURO:** Toda tarefa deve ser executada usando **agents swarm**, com o **máximo de agents em paralelo possível**.
+
 | # | Regra | Ação |
 |---|-------|------|
-| 1 | 🧠 **Carregar skill do Mastra primeiro** | Use `/mastra` antes de qualquer código |
-| 2 | 🗑️ **Exclusão sempre via lixeira** | `trash-put` ou `gio trash` (nunca `rm`) |
-| 3 | ⚙️ **Gerenciar serviços apenas via script** | Use `./scripts/mastra-studio.sh` — nunca `kill`/`pkill` |
-| 4 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação explícita |
-| 4a| 🚫 **NUNCA usar esquema 'xpertia'** | Esquema legado protegido - contém dados de produção |
-| 5 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
-| 6 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
-| 7 | 🏗️ **`.infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `.infra/` |
-| 8 | 📝 **Documente mudanças em `.infra/`** | Sempre atualize `.infra/` quando alterar o ambiente |
-| 9 | 🔒 **Autorização obrigatória** | Mudanças na infraestrutura PRECISAM de autorização **EXPLÍCITA** |
+| 1 | 🐝 **Agents Swarm obrigatório** | Use múltiplos agents em paralelo para todas as tarefas sempre que possível |
+| 2 | 🧠 **Carregar skill do Mastra primeiro** | Use `/mastra` antes de qualquer código |
+| 3 | 🗑️ **Exclusão sempre via lixeira** | `trash-put` ou `gio trash` (nunca `rm`) |
+| 4 | ⚙️ **Gerenciar serviços apenas via script** | Use `./scripts/mastra-studio.sh` — nunca `kill`/`pkill` |
+| 5 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação explícita |
+| 5a| 🚫 **NUNCA usar esquema 'xpertia'** | Esquema legado protegido - contém dados de produção |
+| 6 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
+| 7 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
+| 8 | 🏗️ **`.infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `.infra/` |
+| 9 | 📝 **Documente mudanças em `.infra/`** | Sempre atualize `.infra/` quando alterar o ambiente |
+| 10 | 🔒 **Autorização obrigatória** | Mudanças na infraestrutura PRECISAM de autorização **EXPLÍCITA** |
 
 ### 🗑️ Exclusão de Arquivos
 ```bash
