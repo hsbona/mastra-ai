@@ -22,6 +22,23 @@ infra/
 
 ---
 
+## 🖥️ Configurações do Sistema
+
+### Hostname
+
+| Configuração | Valor |
+|--------------|-------|
+| **Hostname** | `dataxpertia-dev` |
+| **IP** | `5.189.185.146` |
+
+Para alterar:
+```bash
+hostnamectl set-hostname dataxpertia-dev
+echo "127.0.0.1 dataxpertia-dev" >> /etc/hosts
+```
+
+---
+
 ## 🗄️ PostgreSQL
 
 ### Script de Inicialização
