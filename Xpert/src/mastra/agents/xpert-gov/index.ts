@@ -2,7 +2,9 @@ import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { PostgresStore } from '@mastra/pg';
 import { researchAgent } from '../shared/research';
-import { docProcessorAgent } from '../shared/doc-processor';
+import { docReaderAgent } from '../shared/doc-reader';
+import { docWriterAgent } from '../shared/doc-writer';
+import { docTransformerAgent } from '../shared/doc-transformer';
 import { xpertGovAnalystAgent } from './analyst';
 import { xpertGovWriterAgent } from './writer';
 
@@ -42,9 +44,35 @@ export const xpertGovSupervisor = new Agent({
 ║              XPERT-GOV SUPERVISOR - ORQUESTRADOR                 ║
 ╚══════════════════════════════════════════════════════════════════╝
 
-VOCÊ É O SUPERVISOR do sistema Xpert-Gov. Sua função é orquestrar 
-tarefas governamentais garantindo que o objetivo do usuário seja 
-completamente atendido através da coordenação de especialistas.
+VOCÊ É O SUPERVISOR do sistema Xpert-Gov. Sua função é atender 
+as solicitações dos usuários de forma completa e natural.
+
+═══════════════════════════════════════════════════════════════════
+🎯 REGRA FUNDAMENTAL: RESPONDA DIRETAMENTE PERGUNTAS SIMPLES
+═══════════════════════════════════════════════════════════════════
+
+Você é um assistente de IA completo. NÃO delegue tudo - use seu 
+próprio conhecimento para responder perguntas simples diretamente.
+
+✅ RESPONDA DIRETAMENTE (sem delegar) quando:
+   • Cumprimentos: "Olá", "Bom dia", "Oi"
+   • Testes de conexão: "teste", "ping", "está aí?"
+   • Perguntas simples: "qual seu nome?", "o que você faz?"
+   • FAQs gerais: "como funciona?", "quem são seus especialistas?"
+   • Despedidas: "tchau", "obrigado", "até logo"
+   • Perguntas de contexto sobre você mesmo ou o sistema
+
+❌ DELEGUAR para especialistas APENAS quando:
+   • Pesquisa na web for necessária → research
+   • Leitura de arquivos → doc-reader
+   • Criação de documentos → doc-writer
+   • Transformação de conteúdo → doc-transformer
+   • Análise estatística de dados → xpert-gov-analyst
+   • Redação de documentos oficiais → xpert-gov-writer
+   • Tarefa complexa que requer múltiplas etapas especializadas
+
+💡 DICA: Se você pode responder com seu próprio conhecimento, 
+   FAÇA ISSO. Não force a delegação desnecessária.
 
 ═══════════════════════════════════════════════════════════════════
 🧠 REACT PATTERN (Reason + Act) - CICLO DE ORQUESTRAÇÃO
@@ -101,17 +129,47 @@ PASSO 4 - DECISÃO:
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ 📄 doc-processor (Document Processor Agent)                     │
+│ 📖 doc-reader (Document Reader Agent)                           │
 ├─────────────────────────────────────────────────────────────────┤
-│ FUNÇÃO: Leitura e escrita de arquivos (PDF, DOCX, Excel, TXT)   │
-│ RETORNO: Conteúdo extraído ou caminho do arquivo criado         │
+│ FUNÇÃO: EXTRAÇÃO DE CONTEÚDO de arquivos (PDF, DOCX, Excel, TXT)│
+│ RETORNO: Conteúdo extraído em formato texto estruturado         │
 │ QUANDO USAR:                                                    │
 │   • Ler arquivos enviados pelo usuário                          │
 │   • Extrair dados de planilhas ou documentos                    │
-│   • Converter formatos de arquivo                               │
 │   • Verificar existência de arquivos                            │
+│ ⚠️ LIMITAÇÃO: NÃO cria novos arquivos                           │
 │ ⚠️ LIMITAÇÃO: NÃO analisa dados estatísticos                    │
 │ ⚠️ LIMITAÇÃO: NÃO redige documentos oficiais                    │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ✍️ doc-writer (Document Writer Agent)                           │
+├─────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: CRIAÇÃO DE DOCUMENTOS (DOCX, Excel, TXT)                │
+│ RETORNO: Caminho do arquivo criado com confirmação              │
+│ QUANDO USAR:                                                    │
+│   • Criar documentos Word (.docx)                               │
+│   • Gerar planilhas Excel (.xlsx)                               │
+│   • Salvar arquivos de texto (.txt)                             │
+│   • Exportar dados para formatos específicos                    │
+│ ⚠️ LIMITAÇÃO: NÃO lê arquivos existentes                        │
+│ ⚠️ LIMITAÇÃO: NÃO analisa dados estatísticos                    │
+│ ⚠️ LIMITAÇÃO: NÃO redige documentos oficiais do governo         │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🔄 doc-transformer (Document Transformer Agent)                 │
+├─────────────────────────────────────────────────────────────────┤
+│ FUNÇÃO: TRANSFORMAÇÃO de conteúdo (resumir, traduzir, chunking) │
+│ RETORNO: Conteúdo transformado conforme solicitado              │
+│ QUANDO USAR:                                                    │
+│   • Resumir documentos extensos                                 │
+│   • Traduzir conteúdo entre idiomas                             │
+│   • Dividir texto em chunks menores                             │
+│   • Reformatar ou reestruturar conteúdo                         │
+│ ⚠️ LIMITAÇÃO: NÃO lê arquivos diretamente (precisa do conteúdo) │
+│ ⚠️ LIMITAÇÃO: NÃO cria arquivos físicos                         │
+│ ⚠️ LIMITAÇÃO: NÃO analisa dados estatísticos                    │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -153,15 +211,25 @@ FLUXO 1: Pesquisa → Documento Oficial
   Coleta dados → Produz documento
 
 FLUXO 2: Documento → Análise → Relatório
-  [doc-processor] → [xpert-gov-analyst] → [xpert-gov-writer]
+  [doc-reader] → [xpert-gov-analyst] → [xpert-gov-writer]
   Extrai dados → Analisa → Redige relatório
+
+FLUXO 2a: Documento → Transformação → Análise
+  [doc-reader] → [doc-transformer] → [xpert-gov-analyst]
+  Lê arquivo → Resume/transf. → Analisa dados
 
 FLUXO 3: Pesquisa → Análise → Documento
   [research] → [xpert-gov-analyst] → [xpert-gov-writer]
   Dados externos → Análise → Documento oficial
 
-FLUXO 4: Apenas Processamento de Arquivo
-  [doc-processor] (único)
+FLUXO 4: Apenas Leitura de Arquivo
+  [doc-reader] (único)
+
+FLUXO 4a: Criação de Documento
+  [doc-writer] (único)
+
+FLUXO 4b: Transformação de Conteúdo
+  [doc-reader] → [doc-transformer] (sequência)
 
 FLUXO 5: Apenas Pesquisa
   [research] (único)
@@ -172,7 +240,9 @@ FLUXO 5: Apenas Pesquisa
 
 1. ORDEM DE EXECUÇÃO É FUNDAMENTAL
    ❌ Errado: Pedir análise ANTES de extrair dados do arquivo
-   ✅ Certo: Sempre doc-processor primeiro quando há arquivo
+   ✅ Certo: Sempre doc-reader primeiro quando há arquivo para ler
+   ✅ Certo: doc-writer quando precisa CRIAR um arquivo novo
+   ✅ Certo: doc-transformer quando precisa TRANSFORMAR conteúdo já extraído
 
 2. PRÉ-REQUISITOS DEVEM SER ATENDIDOS
    • analyst PRECISA de dados já extraídos
@@ -203,8 +273,9 @@ FLUXO 5: Apenas Pesquisa
    □ O formato está adequado ao contexto governamental?
 
 6. CONVERSAS SIMPLES NÃO PRECISAM DE ESPECIALISTA
-   → Cumprimentos, FAQs simples: responda diretamente
+   → Cumprimentos, FAQs simples, testes de conexão: responda diretamente
    → Tarefas complexas: orquestre especialistas
+   → NUNCA diga "não existe tarefa específica" - responda normalmente
 
 ═══════════════════════════════════════════════════════════════════
 📝 COMUNICAÇÃO COM ESPECIALISTAS
@@ -255,7 +326,9 @@ Se todos atendidos → apresente resultado ao usuário.
   // ==========================================
   agents: {
     research: researchAgent,
-    'doc-processor': docProcessorAgent,
+    'doc-reader': docReaderAgent,
+    'doc-writer': docWriterAgent,
+    'doc-transformer': docTransformerAgent,
     'xpert-gov-analyst': xpertGovAnalystAgent,
     'xpert-gov-writer': xpertGovWriterAgent,
   },
@@ -279,8 +352,7 @@ Se todos atendidos → apresente resultado ao usuário.
   // CONFIGURAÇÕES AVANÇADAS DO SUPERVISOR
   // ==========================================
   defaultOptions: {
-    // maxSteps: 10 é o recomendado para fluxos research + processing + output
-    maxSteps: 10,
+    // maxSteps definido na chamada para evitar problemas de tipo
 
     // ========================================
     // HOOK: Após cada iteração do supervisor
@@ -293,7 +365,8 @@ Se todos atendidos → apresente resultado ao usuário.
 
       // Validação: se a resposta é muito curta e não terminou naturalmente, 
       // pode indicar que precisa continuar
-      if (context.text.length < 50 && context.iteration < context.maxIterations) {
+      const maxIterations = context.maxIterations ?? 10;
+      if (context.text.length < 50 && context.iteration < maxIterations) {
         return {
           continue: true,
           feedback: 'A resposta parece incompleta. Continue processando para atender completamente à solicitação do usuário.',
@@ -323,10 +396,24 @@ Se todos atendidos → apresente resultado ao usuário.
           };
         }
 
-        if (context.primitiveId === 'doc-processor') {
+        if (context.primitiveId === 'doc-reader') {
           return {
             proceed: true,
-            modifiedPrompt: `${context.prompt}\n\n⚠️ IMPORTANTE: Verifique se o arquivo existe antes de processar. Em caso de erro, retorne mensagem clara para o usuário.`,
+            modifiedPrompt: `${context.prompt}\n\n⚠️ IMPORTANTE: Verifique se o arquivo existe antes de processar. Extraia TODO o conteúdo relevante. Em caso de erro, retorne mensagem clara para o usuário.`,
+          };
+        }
+
+        if (context.primitiveId === 'doc-writer') {
+          return {
+            proceed: true,
+            modifiedPrompt: `${context.prompt}\n\n⚠️ IMPORTANTE: Crie o arquivo no formato especificado (DOCX, XLSX ou TXT). Confirme o caminho completo do arquivo salvo. Verifique se o conteúdo está completo antes de salvar.`,
+          };
+        }
+
+        if (context.primitiveId === 'doc-transformer') {
+          return {
+            proceed: true,
+            modifiedPrompt: `${context.prompt}\n\n⚠️ IMPORTANTE: Aplique a transformação solicitada (resumo, tradução, chunking, etc.) mantendo a fidelidade do conteúdo original. Especifique claramente o que foi transformado.`,
           };
         }
 
@@ -377,15 +464,18 @@ Se todos atendidos → apresente resultado ao usuário.
 
         // Feedback opcional baseado no conteúdo do resultado
         if (context.result) {
+          // Garantir que result seja tratado como string
+          const resultStr = typeof context.result === 'string' ? context.result : JSON.stringify(context.result);
+          
           // Se o resultado for muito curto, pode indicar problema
-          if (context.result.length < 100) {
+          if (resultStr.length < 100) {
             return {
               feedback: `O resultado de ${context.primitiveId} parece curto. Verifique se todas as informações necessárias foram incluídas.`,
             };
           }
 
           // Verificar se fontes foram incluídas (para research)
-          if (context.primitiveId === 'research' && !context.result.toLowerCase().includes('fonte')) {
+          if (context.primitiveId === 'research' && !resultStr.toLowerCase().includes('fonte')) {
             return {
               feedback: 'A pesquisa foi concluída, mas não identifiquei citação de fontes. Assegure-se de que as fontes estão incluídas no resultado.',
             };

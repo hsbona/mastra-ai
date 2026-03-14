@@ -472,7 +472,34 @@ export const writeDOCXTool = createTool({
   }),
   execute: async ({ context }) => {
     try {
-      const outputDir = path.join('./workspace/outputs', context.outputPath);
+      // Determinar o diretório de saída baseado no cwd
+      // O workspace deve estar na raiz do projeto Xpert/
+      let outputDir: string;
+      
+      // Tentar múltiplas estratégias para encontrar/criar o diretório workspace
+      const cwd = process.cwd();
+      const strategies = [
+        path.resolve(cwd, 'workspace/outputs', context.outputPath),
+        path.resolve(cwd, '../workspace/outputs', context.outputPath),
+        path.resolve(cwd, '../../workspace/outputs', context.outputPath),
+        path.resolve(__dirname, '../../../workspace/outputs', context.outputPath),
+      ];
+      
+      // Usar a primeira estratégia que funcione (ou a primeira se nenhuma existir)
+      outputDir = strategies[0];
+      
+      // Tentar encontrar um diretório workspace existente
+      for (const candidate of strategies) {
+        const parentWorkspace = path.dirname(path.dirname(candidate));
+        try {
+          await fs.access(parentWorkspace);
+          outputDir = candidate;
+          break;
+        } catch {
+          continue;
+        }
+      }
+      
       await fs.mkdir(outputDir, { recursive: true });
       
       const fileName = context.fileName.endsWith('.docx') ? context.fileName : `${context.fileName}.docx`;
@@ -571,7 +598,30 @@ export const writeExcelTool = createTool({
   }),
   execute: async ({ context }) => {
     try {
-      const outputDir = path.join('./workspace/outputs', context.outputPath);
+      // Determinar o diretório de saída baseado no cwd
+      let outputDir: string;
+      
+      const cwd = process.cwd();
+      const strategies = [
+        path.resolve(cwd, 'workspace/outputs', context.outputPath),
+        path.resolve(cwd, '../workspace/outputs', context.outputPath),
+        path.resolve(cwd, '../../workspace/outputs', context.outputPath),
+        path.resolve(__dirname, '../../../workspace/outputs', context.outputPath),
+      ];
+      
+      outputDir = strategies[0];
+      
+      for (const candidate of strategies) {
+        const parentWorkspace = path.dirname(path.dirname(candidate));
+        try {
+          await fs.access(parentWorkspace);
+          outputDir = candidate;
+          break;
+        } catch {
+          continue;
+        }
+      }
+      
       await fs.mkdir(outputDir, { recursive: true });
       
       const fileName = context.fileName.endsWith('.xlsx') ? context.fileName : `${context.fileName}.xlsx`;

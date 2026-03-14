@@ -7,7 +7,9 @@ import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
 import { documentSummarizeWorkflow } from './workflows/document-summarize-workflow';
 import { documentTranslateWorkflow } from './workflows/document-translate-workflow';
 import { researchAgent } from './agents/shared/research';
-import { docProcessorAgent } from './agents/shared/doc-processor';
+import { docReaderAgent } from './agents/shared/doc-reader';
+import { docWriterAgent } from './agents/shared/doc-writer';
+import { docTransformerAgent } from './agents/shared/doc-transformer';
 import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
 import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
 import { xpertGovSupervisor } from './agents/xpert-gov';
@@ -63,7 +65,7 @@ export {
 } from './config/model-config';
 
 // Exportar agentes especializados
-export { researchAgent, docProcessorAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
+export { researchAgent, docReaderAgent, docWriterAgent, docTransformerAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
 
 // Exportar supervisor principal
 export { xpertGovSupervisor };
@@ -100,7 +102,9 @@ export const mastra = new Mastra({
   },
   agents: { 
     researchAgent,
-    docProcessorAgent,
+    docReaderAgent,
+    docWriterAgent,
+    docTransformerAgent,
     xpertGovAnalystAgent,
     xpertGovWriterAgent,
     xpertGovSupervisor,
