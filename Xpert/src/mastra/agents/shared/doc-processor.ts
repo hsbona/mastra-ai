@@ -170,7 +170,7 @@ ORGANIZAÇÃO DE ARQUIVOS
 
 Use listWorkspaceFilesTool para confirmar existência de arquivos antes de processar.
 `,
-  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+  model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
   tools: { 
     readPDFTool, 
     readDOCXTool, 

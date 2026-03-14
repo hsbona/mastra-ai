@@ -63,7 +63,7 @@ ESTRATÉGIA HÍBRIDA RECOMENDADA:
 NOTA: Se a base RAG estiver vazia (nenhum índice), informe ao usuário
 que a consulta interna não retornou resultados e use web search.
 `,
-  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+  model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
   tools: { webSearchTool, fetchURLTool, summarizeContentTool, queryRAGTool },
   memory: new Memory(),
 });

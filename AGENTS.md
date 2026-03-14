@@ -86,7 +86,7 @@ src/mastra/
 
 ```bash
 # Desenvolvimento (inicia Mastra Studio em localhost:4111)
-cd Xpert && ../scripts/mastra-studio.sh start   # Inicia Studio (conexão direta)
+cd Xpert && ../scripts/mastra-studio.sh start   # Inicia Studio
 ../scripts/mastra-studio.sh status  # Verifica status
 ../scripts/mastra-studio.sh stop    # Para Studio
 ../scripts/mastra-studio.sh logs    # Logs em tempo real
@@ -102,6 +102,8 @@ pnpm run start
 
 ## 🖥️ Ambiente de Desenvolvimento
 
+> **IMPORTANTE:** O desenvolvimento é feito **DIRETAMENTE na VPS** via VSCode Remote SSH.
+
 ### VPS de Desenvolvimento
 
 | Configuração | Valor |
@@ -110,40 +112,34 @@ pnpm run start
 | **Tipo** | VPS sem interface gráfica (headless) |
 | **IP** | `5.189.185.146` |
 | **Acesso** | SSH / VSCode Remote |
+| **Repositório** | `/root/dev/xpertia/mastra-ai` |
+| **PostgreSQL** | localhost:5432 (mesma máquina) |
+
+### Conexão SSH
 
 ```bash
-# Comando para conectar à VPS via SSH
+# Comando direto
 ssh -i .key/root_key root@5.189.185.146
 
 # Ou usando configuração do SSH (~/.ssh/config)
+Host spark-dev
+    HostName 5.189.185.146
+    User root
+    IdentityFile ~/.ssh/root_key
+    
+# Conectar com:
 ssh spark-dev
-# ou
-ssh xpertia-vps
 ```
 
 > ⚠️ **Atenção:** Nunca faça commit da chave SSH `.key/root_key`. O arquivo já está no `.gitignore`.
 
-> 💡 **Nota:** Existem dois arquivos na pasta `.key/`:
-> - `root_key` (privada - use esta para conectar)
-> - `root_key.pub` (pública - fica no servidor)
->
-> O root já está configurado no `/etc/sudoers.d/root-nopasswd` para acesso sem senha.
+### VSCode Remote
 
-### Desenvolvimento via VSCode Remote
+1. **Local:** VSCode com extensão "Remote - SSH"
+2. **Remote:** VPS AlmaLinux 9 (este servidor)
+3. **Caminho:** `/root/dev/xpertia/mastra-ai`
 
-O desenvolvimento é feito **exclusivamente via VSCode Remote SSH**:
-
-1. Local: VSCode com extensão "Remote - SSH"
-2. Remote: VPS AlmaLinux 9 (este servidor)
-3. O repositório está em `/root/dev/` no VPS
-
-> 🚫 **IMPORTANTE - Sem Interface Gráfica:**
-> - Esta VPS **não possui** ambiente desktop (GNOME, KDE, XFCE, etc.)
-> - **NÃO instalar** navegadores (Chromium, Firefox, Chrome), editores gráficos, ou qualquer software GUI
-> - **NÃO instalar** pacotes que dependam de X11/Wayland
-> - Use apenas ferramentas CLI (linha de comando)
-
-### Port Forwarding (VSCode Remote)
+### Port Forwarding (Automático)
 
 Ao usar VSCode Remote, o port forwarding é automático:
 
@@ -153,18 +149,34 @@ Ao usar VSCode Remote, o port forwarding é automático:
 
 > 💡 O VSCode detecta automaticamente processos escutando em portas e oferece abrir no navegador local.
 
-### PostgreSQL Remoto (Conexão Direta)
+### 🚫 Sem Interface Gráfica
 
-**ATUALIZAÇÃO:** A conexão ao PostgreSQL é feita **diretamente** via porta 5432 (SSL obrigatório).
+- Esta VPS **não possui** ambiente desktop (GNOME, KDE, XFCE, etc.)
+- **NÃO instalar** navegadores (Chromium, Firefox, Chrome), editores gráficos, ou qualquer software GUI
+- **NÃO instalar** pacotes que dependam de X11/Wayland
+- Use apenas ferramentas CLI (linha de comando)
+
+---
+
+### PostgreSQL (Local na VPS)
+
+O PostgreSQL roda **localmente na mesma VPS** do desenvolvimento:
 
 ```bash
-../scripts/mastra-studio.sh start    # Inicia Studio (conexão direta ao VPS)
-../scripts/mastra-studio.sh status   # Verifica conexão
+# Verificar status
+sudo systemctl status postgresql
+
+# Conectar ao banco
+sudo -u postgres psql -d xpertia
+
+# Ver logs
+sudo journalctl -u postgresql -f
 ```
 
-- `DATABASE_URL` aponta diretamente para `5.189.185.146:5432` (com SSL)
-- **NÃO** é mais necessário túnel SSH
-- `infra/docker/` contém as configurações Docker oficiais
+- Host: `localhost` (127.0.0.1)
+- Porta: `5432`
+- DATABASE_URL aponta para localhost
+- **NÃO** é necessário túnel SSH ou conexão remota
 
 ### 🗄️ Banco de Dados — PROIBIDO SEM AUTORIZAÇÃO
 
