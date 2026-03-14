@@ -18,8 +18,8 @@ Guia para agentes de IA trabalhando neste repositório.
 | 5a| 🚫 **NUNCA usar esquema 'xpertia'** | Esquema legado protegido - contém dados de produção |
 | 6 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
 | 7 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
-| 8 | 🏗️ **`.infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `.infra/` |
-| 9 | 📝 **Documente mudanças em `.infra/`** | Sempre atualize `.infra/` quando alterar o ambiente |
+| 8 | 🏗️ **`infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `infra/` |
+| 9 | 📝 **Documente mudanças em `infra/`** | Sempre atualize `infra/` quando alterar o ambiente |
 | 10 | 🔒 **Autorização obrigatória** | Mudanças na infraestrutura PRECISAM de autorização **EXPLÍCITA** |
 
 ### 🗑️ Exclusão de Arquivos
@@ -164,7 +164,7 @@ Ao usar VSCode Remote, o port forwarding é automático:
 
 - `DATABASE_URL` aponta diretamente para `5.189.185.146:5432` (com SSL)
 - **NÃO** é mais necessário túnel SSH
-- `.infra/docker/` é apenas referência — não execute `docker-compose` localmente
+- `infra/docker/` contém as configurações Docker oficiais
 
 ### 🗄️ Banco de Dados — PROIBIDO SEM AUTORIZAÇÃO
 
@@ -181,22 +181,57 @@ Ao usar VSCode Remote, o port forwarding é automático:
 
 ---
 
-## 🏗️ Infraestrutura como Código (`.infra/`)
+## 🏗️ Infraestrutura como Código (`infra/`)
 
-### O que é `.infra/`
+### O que é `infra/`
 
-O diretório `.infra/` contém as **definições oficiais** de toda a infraestrutura do projeto:
+O diretório `infra/` contém as **definições oficiais** de toda a infraestrutura do projeto. Ele está **versionado no git** na raiz do repositório:
+
+```
+/root/dev/xpertia/mastra-ai/
+├── infra/              # ← INFRAESTRUTURA VERSIONADA
+│   ├── docker/
+│   ├── pm2/
+│   ├── postgreSQL/
+│   └── README.md
+├── Xpert/              # ← Código da aplicação
+├── docs/
+└── scripts/
+```
 
 | Diretório | Conteúdo |
 |-----------|----------|
-| `.infra/postgreSQL/` | Scripts SQL para recriar o banco de dados |
-| `.infra/docker/` | Configurações Docker (referência apenas) |
+| `infra/postgreSQL/` | Scripts SQL para recriar o banco de dados |
+| `infra/docker/` | Configurações Docker (DEV e PROD) |
+| `infra/pm2/` | Configuração PM2 para Mastra |
 
 ### 📝 Regras de Ouro
 
-1. **📁 Este é o local oficial**: Todas as definições de modificações no ambiente DEVEM estar em `.infra/`
-2. **🔄 Sempre atualize**: Quando houver mudança no ambiente, atualize os arquivos em `.infra/`
+1. **📁 Este é o local oficial**: Todas as definições de modificações no ambiente DEVEM estar em `infra/`
+2. **🔄 Sempre atualize**: Quando houver mudança no ambiente, atualize os arquivos em `infra/`
 3. **🔒 Autorização obrigatória**: Mudanças na infraestrutura PRECISAM ser **EXPLICITAMENTE autorizadas**
+
+### ⚠️ Regra Crítica: Sincronização Infra ↔ VPS
+
+**SEMPRE** que fizer qualquer alteração diretamente na VPS (banco de dados, Docker, PM2), você **DEVE** atualizar os arquivos correspondentes em `infra/`:
+
+```
+❌ Fluxo INCORRETO:
+   1. Altera config no PostgreSQL na VPS
+   2. Esquece de atualizar infra/postgreSQL/
+   3. Perde a mudança quando recriar o ambiente
+
+✅ Fluxo CORRETO:
+   1. Altera config no PostgreSQL na VPS
+   2. Atualiza infra/postgreSQL/ com a mesma mudança
+   3. Commit: git add infra/ && git commit -m "infra: ajusta ..."
+   4. Ambiente pode ser recriado idêntico
+```
+
+**Checklist mental:**
+- Mudei algo no banco? → Atualize `infra/postgreSQL/`
+- Mudei config do Docker? → Atualize `infra/docker/`
+- Mudei config do PM2? → Atualize `infra/pm2/`
 
 ### ❌ PROIBIDO sem autorização explícita:
 
@@ -204,11 +239,11 @@ O diretório `.infra/` contém as **definições oficiais** de toda a infraestru
 - Criar/alterar/remover esquemas
 - Instalar/remover extensões do PostgreSQL
 - Modificar configurações de performance do banco
-- Alterar scripts em `.infra/` sem aprovação
+- Alterar scripts em `infra/` sem aprovação
 
 ### ✅ Permitido (com documentação):
 
-- Adicionar novos scripts SQL em `.infra/postgreSQL/`
+- Adicionar novos scripts SQL em `infra/postgreSQL/`
 - Criar índices adicionais (após aprovação)
 - Atualizar comentários em objetos existentes
 - Adicionar dados de seed
@@ -218,10 +253,8 @@ O diretório `.infra/` contém as **definições oficiais** de toda a infraestru
 Para recriar o banco de dados do zero:
 
 ```bash
-# Executar scripts na ordem numérica
-psql -U postgres -d xpertia -f .infra/postgreSQL/01-extensions.sql
-psql -U xpertia -d xpertia -f .infra/postgreSQL/02-schemas.sql
-psql -U xpertia -d xpertia -f .infra/postgreSQL/03-pgvector-config.sql
+# Executar script de inicialização
+psql -U postgres -d xpertia -f /root/dev/xpertia/mastra-ai/infra/postgreSQL/01-init-database.sql
 ```
 
 ---
@@ -275,7 +308,8 @@ Use `.task/[nome].md`:
 - [ ] Criou em `src/mastra/{agents,workflows,tools}/`?
 - [ ] Exportou em `src/mastra/index.ts`?
 - [ ] Não criou código de interface?
-- [ ] Atualizou `.infra/` se modificou o ambiente?
+- [ ] Atualizou `infra/` se modificou o ambiente?
+- [ ] Fez commit das mudanças em `infra/`?
 - [ ] Tem autorização explícita para mudanças na infra?
 
 ---
