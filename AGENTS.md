@@ -102,6 +102,34 @@ pnpm run start
 
 ## Infraestrutura
 
+### Conexão SSH
+
+Para acessar a VPS de desenvolvimento via SSH:
+
+| Configuração | Valor |
+|--------------|-------|
+| **Host** | `5.189.185.146` |
+| **Usuário** | `root` |
+| **Chave SSH Privada** | `.key/root_key` |
+
+```bash
+# Comando para conectar à VPS (chave privada, não a .pub)
+ssh -i .key/root_key root@5.189.185.146
+
+# Ou usando configuração do SSH (~/.ssh/config)
+ssh spark-dev
+# ou
+ssh xpertia-vps
+```
+
+> ⚠️ **Atenção:** Nunca faça commit da chave SSH `.key/root_key`. O arquivo já está no `.gitignore`.
+
+> 💡 **Nota:** Existem dois arquivos na pasta `.key/`:
+> - `root_key` (privada - use esta para conectar)
+> - `root_key.pub` (pública - fica no servidor)
+>
+> O root já está configurado no `/etc/sudoers.d/root-nopasswd` para acesso sem senha.
+
 ### PostgreSQL Remoto (Conexão Direta)
 
 **ATUALIZAÇÃO:** A conexão ao PostgreSQL é feita **diretamente** via porta 5432 (SSL obrigatório).
