@@ -6,7 +6,8 @@ import { queryRAGTool } from '../../tools/rag-tools';
 export const researchAgent = new Agent({
   id: 'research',
   name: 'Research Agent',
-  description: 'Realiza pesquisas na web e sumarização de conteúdo. Retorna informações estruturadas com fontes citadas. Use para: pesquisa web, busca de informações atualizadas, análise de URLs.',
+  // Descrição otimizada para o Supervisor - explica o QUE faz e o QUE retorna
+  description: 'Especialista em pesquisa web e coleta de informações externas. Retorna dados estruturados em bullet points com fontes citadas. Use para: buscar informações atualizadas na internet, pesquisar legislação recente, coletar dados de fontes externas. NÃO escreve documentos formais.',
   instructions: `
 Você é um agente especializado em pesquisa web e sumarização de conteúdo.
 

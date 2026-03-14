@@ -10,7 +10,7 @@ import { researchAgent } from './agents/shared/research';
 import { docProcessorAgent } from './agents/shared/doc-processor';
 import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
 import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
-import { xpertGovCoordinator } from './agents/xpert-gov';
+import { xpertGovSupervisor } from './agents/xpert-gov';
 import { chatAgent } from './agents/chat-agent';
 import { fileTools } from './tools/file-tools';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
@@ -65,8 +65,8 @@ export {
 // Exportar agentes especializados
 export { researchAgent, docProcessorAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
 
-// Exportar coordenador principal
-export { xpertGovCoordinator };
+// Exportar supervisor principal
+export { xpertGovSupervisor };
 export { chatAgent };
 
 // ============================================
@@ -103,7 +103,7 @@ export const mastra = new Mastra({
     docProcessorAgent,
     xpertGovAnalystAgent,
     xpertGovWriterAgent,
-    xpertGovCoordinator,
+    xpertGovSupervisor,
     chatAgent,
   },
   workspace,

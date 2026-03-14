@@ -6,7 +6,8 @@ import { calculateTool } from '../../tools/web-tools';
 export const xpertGovAnalystAgent = new Agent({
   id: 'xpert-gov-analyst',
   name: 'Xpert-Gov Analyst',
-  description: 'Analisa dados governamentais, estatísticas, projeções orçamentárias e identifica anomalias. Use para: análise de despesas, licitações, folha de pagamento, prestação de contas, KPIs governamentais.',
+  // Descrição otimizada para o Supervisor
+  description: 'Especialista em análise de dados governamentais do setor público brasileiro. Realiza análises estatísticas, identifica anomalias e gera projeções orçamentárias. Use para: analisar despesas públicas, licitações, folha de pagamento, prestação de contas. Recebe dados já extraídos (planilhas/dados). NÃO lê arquivos diretamente e NÃO redige documentos oficiais.',
   instructions: `
 Você é um analista especializado em dados governamentais do setor público brasileiro.
 
