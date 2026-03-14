@@ -100,20 +100,19 @@ pnpm run start
 
 ---
 
-## Infraestrutura
+## 🖥️ Ambiente de Desenvolvimento
 
-### Conexão SSH
-
-Para acessar a VPS de desenvolvimento via SSH:
+### VPS de Desenvolvimento
 
 | Configuração | Valor |
 |--------------|-------|
-| **Host** | `5.189.185.146` |
-| **Usuário** | `root` |
-| **Chave SSH Privada** | `.key/root_key` |
+| **SO** | AlmaLinux 9.7 (Moss Jungle Cat) |
+| **Tipo** | VPS sem interface gráfica (headless) |
+| **IP** | `5.189.185.146` |
+| **Acesso** | SSH / VSCode Remote |
 
 ```bash
-# Comando para conectar à VPS (chave privada, não a .pub)
+# Comando para conectar à VPS via SSH
 ssh -i .key/root_key root@5.189.185.146
 
 # Ou usando configuração do SSH (~/.ssh/config)
@@ -129,6 +128,30 @@ ssh xpertia-vps
 > - `root_key.pub` (pública - fica no servidor)
 >
 > O root já está configurado no `/etc/sudoers.d/root-nopasswd` para acesso sem senha.
+
+### Desenvolvimento via VSCode Remote
+
+O desenvolvimento é feito **exclusivamente via VSCode Remote SSH**:
+
+1. Local: VSCode com extensão "Remote - SSH"
+2. Remote: VPS AlmaLinux 9 (este servidor)
+3. O repositório está em `/root/dev/` no VPS
+
+> 🚫 **IMPORTANTE - Sem Interface Gráfica:**
+> - Esta VPS **não possui** ambiente desktop (GNOME, KDE, XFCE, etc.)
+> - **NÃO instalar** navegadores (Chromium, Firefox, Chrome), editores gráficos, ou qualquer software GUI
+> - **NÃO instalar** pacotes que dependam de X11/Wayland
+> - Use apenas ferramentas CLI (linha de comando)
+
+### Port Forwarding (VSCode Remote)
+
+Ao usar VSCode Remote, o port forwarding é automático:
+
+| Porta Local | Porta Remota | Serviço |
+|-------------|--------------|---------|
+| `localhost:4111` | `localhost:4111` | Mastra Studio |
+
+> 💡 O VSCode detecta automaticamente processos escutando em portas e oferece abrir no navegador local.
 
 ### PostgreSQL Remoto (Conexão Direta)
 
