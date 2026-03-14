@@ -139,7 +139,7 @@ Usuário: "Oi, tudo bem?"
 → Ação: Responder diretamente (não delegar)
 `,
 
-  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+  model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
 
   // Sem tools diretas - apenas delega para subagentes
   tools: {},
@@ -166,94 +166,10 @@ Usuário: "Oi, tudo bem?"
   }),
 
   // ==========================================
-  // CONFIGURAÇÃO CoT (Chain of Thought)
+  // CONFIGURAÇÃO
   // ==========================================
   defaultOptions: {
-    // Permite múltiplas iterações de delegação
-    maxSteps: 15,
-
-    // Hook executado a cada iteração
-    onIterationComplete: async (context) => {
-      console.log(`\n[CoT] Step ${context.iteration}/${context.maxSteps} complete`);
-      console.log(`      Finish reason: ${context.finishReason}`);
-      
-      // Alerta se estiver próximo do limite
-      if (context.iteration > 12) {
-        console.warn(`[CoT] Warning: Approaching maxSteps limit (${context.iteration}/${context.maxSteps})`);
-      }
-      
-      return { continue: true };
-    },
-
-    // Configuração de delegação para subagentes
-    delegation: {
-      // Executado ANTES de delegar
-      onDelegationStart: async (context) => {
-        console.log(`[Delegation] → ${context.primitiveId}`);
-
-        // Personaliza prompt baseado no agente destino
-        const customPrompts: Record<string, string> = {
-          'research': '\n\n[Coordenação] Foque em fontes oficiais (.gov.br) e cite todas as referências.',
-          'doc-processor': '\n\n[Coordenação] Use workspace/ para leitura/escrita. Confirme paths dos arquivos.',
-          'xpert-gov-analyst': '\n\n[Coordenação] Aplique LGPD - nunca exponha dados pessoais. Destaque insights acionáveis.',
-          'xpert-gov-writer': '\n\n[Coordenação] Siga rigorosamente as normas de redação oficial do governo federal.',
-        };
-
-        const customPrompt = customPrompts[context.primitiveId] || '';
-
-        return {
-          proceed: true,
-          modifiedPrompt: `${context.prompt}${customPrompt}`,
-        };
-      },
-
-      // Executado APÓS delegação completar
-      onDelegationComplete: async (context) => {
-        console.log(`[Delegation] ✓ ${context.primitiveId} completed`);
-
-        if (context.error) {
-          console.error(`[Delegation] ✗ ${context.primitiveId} failed:`, context.error);
-          
-          // Verificar se é erro relacionado a arquivos (não deve fazer fallback automático)
-          const errorStr = String(context.error).toLowerCase();
-          const isFileError = errorStr.includes('arquivo não encontrado') || 
-                              errorStr.includes('não foi possível ler') ||
-                              errorStr.includes('pdf inválido') ||
-                              errorStr.includes('pdf protegido') ||
-                              errorStr.includes('sem permissão') ||
-                              errorStr.includes('arquivo vazio') ||
-                              errorStr.includes('caminho inválido');
-          
-          if (isFileError && context.primitiveId === 'doc-processor') {
-            return {
-              feedback: `❌ ERRO DE LEITURA DE ARQUIVO: ${context.error}\n\n` +
-                `⚠️ IMPORTANTE: NÃO procure informações na internet como substituto. ` +
-                `O usuário solicitou especificamente a leitura de um arquivo local. ` +
-                `Informe o erro acima ao usuário e pergunte se deseja:\n` +
-                `1. Verificar o caminho do arquivo\n` +
-                `2. Tentar novamente\n` +
-                `3. Usar pesquisa web como alternativa (COM CONFIRMAÇÃO)`,
-            };
-          }
-          
-          return {
-            feedback: `O agente ${context.primitiveId} encontrou um erro: ${context.error}. ` +
-              'Por favor, tente uma abordagem alternativa ou solicite ajuda ao usuário.',
-          };
-        }
-
-        // Feedback de sucesso
-        return {
-          feedback: `Tarefa concluída pelo ${context.primitiveId}. ` +
-            'Analise o resultado e prossiga conforme necessário.',
-        };
-      },
-
-      // Filtra mensagens para controlar tamanho do contexto
-      messageFilter: ({ messages }) => {
-        // Mantém últimas 15 mensagens para balancear contexto vs tokens
-        return messages.slice(-15);
-      },
-    },
+    // Limita a 5 steps para evitar loops
+    maxSteps: 5,
   },
 });

@@ -6,6 +6,7 @@ import { calculateTool } from '../../tools/web-tools';
 export const xpertGovAnalystAgent = new Agent({
   id: 'xpert-gov-analyst',
   name: 'Xpert-Gov Analyst',
+  description: 'Analisa dados governamentais, estatísticas, projeções orçamentárias e identifica anomalias. Use para: análise de despesas, licitações, folha de pagamento, prestação de contas, KPIs governamentais.',
   instructions: `
 Você é um analista especializado em dados governamentais do setor público brasileiro.
 
@@ -62,7 +63,7 @@ SIGILO E LGPD:
 - Trate dados sigilosos conforme classificação
 - Em caso de dúvida, consulte o solicitante sobre a natureza dos dados
 `,
-  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+  model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
   tools: { readExcelTool, calculateTool },
   memory: new Memory(),
 });

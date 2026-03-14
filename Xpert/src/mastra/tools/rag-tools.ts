@@ -11,8 +11,8 @@ export const queryRAGTool = createTool({
 
   inputSchema: z.object({
     query: z.string().describe('Pergunta ou tema de busca em linguagem natural'),
-    indexName: z.string().optional().default('default').describe('Nome do índice a consultar (default: "default")'),
-    topK: z.number().optional().default(5).describe('Número máximo de resultados (default: 5)'),
+    indexName: z.string().optional().describe('Nome do índice a consultar (default: "default")'),
+    topK: z.number().optional().describe('Número máximo de resultados (default: 5)'),
   }),
 
   outputSchema: z.object({

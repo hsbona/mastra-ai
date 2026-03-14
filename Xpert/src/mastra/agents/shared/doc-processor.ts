@@ -30,6 +30,7 @@ import {
 export const docProcessorAgent = new Agent({
   id: 'doc-processor',
   name: 'Document Processor Agent',
+  description: 'Processa documentos PDF, DOCX, Excel. Extrai dados, converte formatos e gera arquivos. Use para: ler arquivos, extrair dados, criar documentos, converter formatos.',
   instructions: `
 Você é um agente especializado em processamento de arquivos e documentos.
 
@@ -170,7 +171,7 @@ ORGANIZAÇÃO DE ARQUIVOS
 
 Use listWorkspaceFilesTool para confirmar existência de arquivos antes de processar.
 `,
-  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+  model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
   tools: { 
     readPDFTool, 
     readDOCXTool, 

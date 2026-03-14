@@ -57,9 +57,11 @@ services:
       POSTGRES_DEFAULT_STATISTICS_TARGET: "200"
       POSTGRES_EFFECTIVE_PARALLEL_WORKERS: "6"
       
+    # Porta exposta APENAS em localhost (127.0.0.1) - não acessível na internet
+    # Acesso externo via SSH tunnel: ssh -L 5432:localhost:5432 root@5.189.185.146
     ports:
-      - "0.0.0.0:5432:5432"
-      
+      - "127.0.0.1:5432:5432"
+    
     volumes:
       - type: volume
         source: postgres_data

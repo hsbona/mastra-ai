@@ -1,0 +1,83 @@
+# ============================================================
+# XpertIA - Docker Compose para Desenvolvimento
+# ============================================================
+# VPS: 24GB RAM | 8 Cores CPU
+# ============================================================
+# Serviço: PostgreSQL + pgvector apenas
+# NOTA: Nginx removido - não utilizado no workflow atual
+# ============================================================
+
+version: '3.9'
+
+services:
+  # ============================================================
+  # PostgreSQL + pgvector
+  # Recursos: 6GB RAM | 3 cores
+  # STATUS: OBRIGATÓRIO - Usado para dados, memória e vetores
+  # ACESSO: Direto via porta 5432 (SSL obrigatório)
+  # ============================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: xpertia-postgres
+    hostname: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-xpertia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-xpertia_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-xpertia}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=pt_BR.UTF-8"
+      # ============================================================
+      # Tuning PostgreSQL para desenvolvimento
+      # ============================================================
+      POSTGRES_SHARED_BUFFERS: "2GB"
+      POSTGRES_EFFECTIVE_CACHE_SIZE: "6GB"
+      POSTGRES_WORK_MEM: "64MB"
+      POSTGRES_MAINTENANCE_WORK_MEM: "512MB"
+      POSTGRES_MAX_CONNECTIONS: "200"
+      POSTGRES_WAL_BUFFERS: "16MB"
+      POSTGRES_MIN_WAL_SIZE: "1GB"
+      POSTGRES_MAX_WAL_SIZE: "4GB"
+      POSTGRES_CHECKPOINT_COMPLETION_TARGET: "0.9"
+      POSTGRES_RANDOM_PAGE_COST: "1.1"
+      POSTGRES_EFFECTIVE_IO_CONCURRENCY: "200"
+    ports:
+      # Acesso direto - porta 5432 aberta para conexões
+      - "0.0.0.0:5432:5432"
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql/data
+      # Scripts de inicialização
+      - type: bind
+        source: ../postgreSQL
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-xpertia} -d ${POSTGRES_DB:-xpertia}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - xpertia-backend
+    deploy:
+      resources:
+        limits:
+          cpus: '3.0'
+          memory: 6G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  xpertia-backend:
+    driver: bridge

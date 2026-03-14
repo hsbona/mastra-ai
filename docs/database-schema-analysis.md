@@ -102,7 +102,7 @@ export const mastra = new Mastra({
 
 ## Scripts de Infraestrutura
 
-Local: `.infra/postgreSQL/`
+Local: `infra/postgreSQL/`
 
 | Script | Descrição |
 |--------|-----------|

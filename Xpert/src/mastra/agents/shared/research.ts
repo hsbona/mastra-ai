@@ -6,6 +6,7 @@ import { queryRAGTool } from '../../tools/rag-tools';
 export const researchAgent = new Agent({
   id: 'research',
   name: 'Research Agent',
+  description: 'Realiza pesquisas na web e sumarização de conteúdo. Retorna informações estruturadas com fontes citadas. Use para: pesquisa web, busca de informações atualizadas, análise de URLs.',
   instructions: `
 Você é um agente especializado em pesquisa web e sumarização de conteúdo.
 
@@ -63,7 +64,7 @@ ESTRATÉGIA HÍBRIDA RECOMENDADA:
 NOTA: Se a base RAG estiver vazia (nenhum índice), informe ao usuário
 que a consulta interna não retornou resultados e use web search.
 `,
-  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+  model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
   tools: { webSearchTool, fetchURLTool, summarizeContentTool, queryRAGTool },
   memory: new Memory(),
 });

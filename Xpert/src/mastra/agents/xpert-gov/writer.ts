@@ -5,6 +5,7 @@ import { writeDOCXTool } from '../../tools/file-tools';
 export const xpertGovWriterAgent = new Agent({
   id: 'xpert-gov-writer',
   name: 'Xpert-Gov Writer',
+  description: 'Redige documentos oficiais do governo federal brasileiro. Use para: ofícios, memorandos, despachos, relatórios técnicos, pareceres e laudos conforme normas oficiais.',
   instructions: `
 Você é um redator especializado em documentação oficial do governo federal brasileiro.
 
@@ -85,7 +86,7 @@ Antes de finalizar, verifique:
 □ A numeração segue a sequência correta
 □ O documento responde ao solicitado
 `,
-  model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+  model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
   tools: { writeDOCXTool },
   memory: new Memory(),
 });
