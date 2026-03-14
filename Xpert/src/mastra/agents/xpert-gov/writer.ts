@@ -5,6 +5,7 @@ import { writeDOCXTool } from '../../tools/file-tools';
 export const xpertGovWriterAgent = new Agent({
   id: 'xpert-gov-writer',
   name: 'Xpert-Gov Writer',
+  description: 'Redige documentos oficiais do governo federal brasileiro. Use para: ofícios, memorandos, despachos, relatórios técnicos, pareceres e laudos conforme normas oficiais.',
   instructions: `
 Você é um redator especializado em documentação oficial do governo federal brasileiro.
 

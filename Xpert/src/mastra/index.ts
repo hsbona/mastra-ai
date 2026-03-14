@@ -11,6 +11,7 @@ import { docProcessorAgent } from './agents/shared/doc-processor';
 import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
 import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
 import { xpertGovCoordinator } from './agents/xpert-gov';
+import { chatAgent } from './agents/chat-agent';
 import { fileTools } from './tools/file-tools';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
 import { systemTools } from './tools/system-tools';
@@ -66,6 +67,7 @@ export { researchAgent, docProcessorAgent, xpertGovAnalystAgent, xpertGovWriterA
 
 // Exportar coordenador principal
 export { xpertGovCoordinator };
+export { chatAgent };
 
 // ============================================
 // WORKSPACE - Área de trabalho persistente
@@ -102,6 +104,7 @@ export const mastra = new Mastra({
     xpertGovAnalystAgent,
     xpertGovWriterAgent,
     xpertGovCoordinator,
+    chatAgent,
   },
   workspace,
   storage,
