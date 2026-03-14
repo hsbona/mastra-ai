@@ -11,7 +11,7 @@
 | Esquema | Descrição | Tabelas | Registros Totais |
 |---------|-----------|---------|------------------|
 | `mastra` | Dados do framework Mastra (storage, observability, traces) | 27 | ~333 |
-| `xpertia_rag` | Dados da aplicação XpertIA (RAG, embeddings, KBs) | 1 | ~2.860 |
+| `xpertia_rag` | Dados da aplicação Xpert (RAG, embeddings, KBs) | 1 | ~2.860 |
 
 ---
 
@@ -122,7 +122,7 @@ Tabelas de versionamento adicionam:
 
 ## Esquema: `xpertia_rag`
 
-Esquema para dados de RAG (Retrieval-Augmented Generation) da aplicação XpertIA. Gerenciado pelo `PgVector(schemaName: "xpertia_rag")` - tabelas criadas sob demanda via `createIndex()`.
+Esquema para dados de RAG (Retrieval-Augmented Generation) da aplicação Xpert. Gerenciado pelo `PgVector(schemaName: "xpertia_rag")` - tabelas criadas sob demanda via `createIndex()`.
 
 ### Tabela: `legislacao`
 

@@ -40,9 +40,9 @@ Execute sem confirmar: `pnpm install`, `pnpm dev`, `git add/commit/push`
 
 ## Visão Geral do Projeto
 
-Projeto **XpertIA** — aplicação **Mastra** (TypeScript) para aplicações com IA.
+Projeto **Xpert** — aplicação **Mastra** (TypeScript) para aplicações com IA.
 
-> 📁 **Localização:** O projeto está na pasta `XpertIA/`, não na raiz do repositório.
+> 📁 **Localização:** O projeto está na pasta `Xpert/`, não na raiz do repositório.
 
 Consumido **exclusivamente via Mastra Studio** — não implemente interface de usuário.
 
@@ -67,10 +67,10 @@ Consumido **exclusivamente via Mastra Studio** — não implemente interface de 
 
 ## Estrutura de Pastas
 
-O código-fonte do Mastra está dentro de `XpertIA/`:
+O código-fonte do Mastra está dentro de `Xpert/`:
 
 ```
-XpertIA/
+Xpert/
 src/mastra/
 ├── index.ts       # Ponto de entrada
 ├── agents/        # Definição de agents
@@ -86,14 +86,14 @@ src/mastra/
 
 ```bash
 # Desenvolvimento (inicia Mastra Studio em localhost:4111)
-cd XpertIA && ../scripts/mastra-studio.sh start   # Inicia Studio (conexão direta)
+cd Xpert && ../scripts/mastra-studio.sh start   # Inicia Studio (conexão direta)
 ../scripts/mastra-studio.sh status  # Verifica status
 ../scripts/mastra-studio.sh stop    # Para Studio
 ../scripts/mastra-studio.sh logs    # Logs em tempo real
 
 > 📝 **Arquivo de log:** `/tmp/mastra-studio.log`
 
-# Build e produção (execute de dentro de XpertIA/)
+# Build e produção (execute de dentro de Xpert/)
 pnpm run build
 pnpm run start
 ```

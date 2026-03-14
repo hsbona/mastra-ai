@@ -20,7 +20,7 @@ import * as path from 'path';
  * Resolve o caminho do arquivo tentando múltiplas estratégias
  * O Mastra pode executar de diretórios diferentes, então tentamos várias opções
  * 
- * DIRETÓRIO OFICIAL DE UPLOADS: XpertIA/workspace/uploads/
+ * DIRETÓRIO OFICIAL DE UPLOADS: Xpert/workspace/uploads/
  * Todo arquivo para leitura DEVE estar em workspace/uploads/ ou workspace/outputs/
  */
 async function resolveFilePath(filePath: string): Promise<{ fullPath: string; attempted: string[] }> {
@@ -32,8 +32,8 @@ async function resolveFilePath(filePath: string): Promise<{ fullPath: string; at
   }
   
   // Estratégias para resolver o caminho (em ordem de prioridade)
-  // IMPORTANTE: O diretório de trabalho oficial é XpertIA/
-  // O arquivo deve estar em XpertIA/workspace/uploads/ ou XpertIA/workspace/outputs/
+  // IMPORTANTE: O diretório de trabalho oficial é Xpert/
+  // O arquivo deve estar em Xpert/workspace/uploads/ ou Xpert/workspace/outputs/
   
   // Detectar a raiz do projeto (onde está a pasta workspace/)
   const cwd = process.cwd();
@@ -46,11 +46,11 @@ async function resolveFilePath(filePath: string): Promise<{ fullPath: string; at
     path.resolve(cwd, '../../workspace', filePath),
     // 3. Direto como está (se já incluir workspace/)
     path.resolve(cwd, filePath),
-    // 4. A partir da raiz do projeto (quando cwd é XpertIA/)
+    // 4. A partir da raiz do projeto (quando cwd é Xpert/)
     path.resolve(cwd, 'workspace', filePath),
-    // 5. Subindo 1 nível (se cwd for XpertIA/src/mastra/)
+    // 5. Subindo 1 nível (se cwd for Xpert/src/mastra/)
     path.resolve(cwd, '../workspace', filePath),
-    // 6. Subindo 2 níveis (se cwd for XpertIA/src/mastra/tools/)
+    // 6. Subindo 2 níveis (se cwd for Xpert/src/mastra/tools/)
     path.resolve(cwd, '../../workspace', filePath),
     // 7. A partir do diretório do arquivo atual (__dirname)
     path.resolve(__dirname, '../../workspace', filePath),
@@ -81,9 +81,9 @@ async function resolveFilePath(filePath: string): Promise<{ fullPath: string; at
 
 export const readPDFTool = createTool({
   id: 'read-pdf',
-  description: 'Extrai texto de arquivos PDF. IMPORTANTE: Os arquivos devem estar em XpertIA/workspace/uploads/. Use caminho relativo a workspace/ (ex: uploads/arquivo.pdf)',
+  description: 'Extrai texto de arquivos PDF. IMPORTANTE: Os arquivos devem estar em Xpert/workspace/uploads/. Use caminho relativo a workspace/ (ex: uploads/arquivo.pdf)',
   inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/Lei_8112_1ed.pdf). O arquivo DEVE estar em XpertIA/workspace/uploads/'),
+    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/Lei_8112_1ed.pdf). O arquivo DEVE estar em Xpert/workspace/uploads/'),
     startPage: z.number().optional().describe('Página inicial (1-indexed, padrão: 1)'),
     endPage: z.number().optional().describe('Página final (inclusive, padrão: última)'),
   }),
@@ -129,14 +129,14 @@ export const readPDFTool = createTool({
           text: '',
           metadata: { totalPages: 0, extractedPages: 0, fileName },
           error: `❌ ARQUIVO NÃO ENCONTRADO: '${filePath}'\n\n` +
-                 `📁 DIRETÓRIO OFICIAL: XpertIA/workspace/uploads/\n\n` +
+                 `📁 DIRETÓRIO OFICIAL: Xpert/workspace/uploads/\n\n` +
                  `✅ COMO USAR:\n` +
-                 `  • Coloque o arquivo em: XpertIA/workspace/uploads/\n` +
+                 `  • Coloque o arquivo em: Xpert/workspace/uploads/\n` +
                  `  • Use o caminho: uploads/nome-do-arquivo.pdf\n\n` +
                  `🔍 Caminhos tentados:\n` +
                  attempted.map((p, i) => `  ${i + 1}. ${p}`).join('\n') + `\n\n` +
                  `⚠️  Verifique:\n` +
-                 `  • O arquivo existe em XpertIA/workspace/uploads/?\n` +
+                 `  • O arquivo existe em Xpert/workspace/uploads/?\n` +
                  `  • O nome do arquivo está correto (incluindo maiúsculas/minúsculas)?\n` +
                  `  • Você usou o formato: uploads/nome-do-arquivo.pdf?\n` +
                  `  • process.cwd() atual: ${process.cwd()}`,
@@ -288,9 +288,9 @@ export const readPDFTool = createTool({
 
 export const readDOCXTool = createTool({
   id: 'read-docx',
-  description: 'Extrai texto de documentos Word (.docx). IMPORTANTE: Os arquivos devem estar em XpertIA/workspace/uploads/. Use caminho relativo a workspace/ (ex: uploads/arquivo.docx)',
+  description: 'Extrai texto de documentos Word (.docx). IMPORTANTE: Os arquivos devem estar em Xpert/workspace/uploads/. Use caminho relativo a workspace/ (ex: uploads/arquivo.docx)',
   inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/documento.docx). O arquivo DEVE estar em XpertIA/workspace/uploads/'),
+    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/documento.docx). O arquivo DEVE estar em Xpert/workspace/uploads/'),
     extractHtml: z.boolean().optional().describe('Retornar conteúdo em HTML (padrão: false)'),
   }),
   outputSchema: z.object({
@@ -362,9 +362,9 @@ export const readDOCXTool = createTool({
 
 export const readExcelTool = createTool({
   id: 'read-excel',
-  description: 'Lê planilhas Excel (.xlsx, .xls) e CSV. IMPORTANTE: Os arquivos devem estar em XpertIA/workspace/uploads/. Use caminho relativo a workspace/ (ex: uploads/planilha.xlsx)',
+  description: 'Lê planilhas Excel (.xlsx, .xls) e CSV. IMPORTANTE: Os arquivos devem estar em Xpert/workspace/uploads/. Use caminho relativo a workspace/ (ex: uploads/planilha.xlsx)',
   inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/dados.xlsx). O arquivo DEVE estar em XpertIA/workspace/uploads/'),
+    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/dados.xlsx). O arquivo DEVE estar em Xpert/workspace/uploads/'),
     sheetName: z.string().optional().describe('Nome da sheet (padrão: primeira sheet)'),
     range: z.string().optional().describe('Range de células (ex: A1:D10)'),
     headerRow: z.number().optional().describe('Linha do header (1-indexed, padrão: 1)'),

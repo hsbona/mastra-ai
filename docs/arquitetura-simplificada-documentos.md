@@ -15,7 +15,7 @@ Além disso, a **geração de arquivos** segue o mesmo princípio de "partes" pa
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         XpertIA - Document Processing                        │
+│                         Xpert - Document Processing                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  MODO 1: RAG INSTITUCIONAL (Fora do Chat)                                   │
@@ -608,7 +608,7 @@ async function generateLargeReport(data: any[]) {
 ## 📁 Estrutura de Pastas Revisada
 
 ```
-XpertIA/workspace/
+Xpert/workspace/
 ├── uploads/           # Arquivos recebidos via chat (temporários)
 │   └── (limpo periodicamente)
 │

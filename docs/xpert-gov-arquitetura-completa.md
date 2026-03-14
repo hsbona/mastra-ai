@@ -2,7 +2,7 @@
 
 > **Versão do Documento:** 1.0  
 > **Data:** 2026-03-11  
-> **Projeto:** XpertIA - Assistente IA para Servidores Públicos  
+> **Projeto:** Xpert - Assistente IA para Servidores Públicos  
 > **Clientes:** Grandes órgãos do Governo Federal Brasileiro
 
 ---

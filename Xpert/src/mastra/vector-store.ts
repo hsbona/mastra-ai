@@ -9,7 +9,7 @@ import { PgVector } from '@mastra/pg';
 
 // ============================================
 // VECTOR STORE - RAG da aplicação (KBs, embeddings)
-// Esquema: 'xpertia_rag' - dados da aplicação XpertIA (RAG, embeddings)
+// Esquema: 'xpertia_rag' - dados da aplicação Xpert (RAG, embeddings)
 // Separado do esquema 'mastra' que contém dados do framework
 // ============================================
 // Aumentar timeout da conexão para evitar erros em grandes upserts

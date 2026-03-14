@@ -52,8 +52,8 @@ export class OpenRouterEmbeddingProvider implements EmbeddingProvider {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://xpertia.local', // Requerido pelo OpenRouter
-          'X-Title': 'XpertIA RAG System', // Requerido pelo OpenRouter
+          'HTTP-Referer': 'https://xpert.local', // Requerido pelo OpenRouter
+          'X-Title': 'Xpert RAG System', // Requerido pelo OpenRouter
         },
         body: JSON.stringify({
           model: this.config.model,
@@ -92,8 +92,8 @@ export class OpenRouterEmbeddingProvider implements EmbeddingProvider {
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://xpertia.local',
-        'X-Title': 'XpertIA RAG System',
+        'HTTP-Referer': 'https://xpert.local',
+        'X-Title': 'Xpert RAG System',
       },
       body: JSON.stringify({
         model: this.config.model,
