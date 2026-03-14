@@ -18,10 +18,22 @@ Este diretório contém as **definições de infraestrutura** necessárias para 
 
 ```
 .infra/
-├── README.md                    # Este arquivo
-├── postgreSQL/                  # Scripts SQL para PostgreSQL
-│   └── 01-init-database.sql     # Único script necessário (novo ambiente)
-└── docker/                      # Configurações Docker (referência)
+├── README.md                           # Este arquivo
+├── PLANO_EXECUCAO_VPS.md             # 📋 PLANO COMPLETO (aguardando autorização)
+├── ARCHITECTURE.md                   # 🏗️ Arquitetura da VPS
+├── PM2_VS_DOCKER.md                  # 🤔 Por que PM2 fora do Docker?
+├── NGINX_IN_DOCKER.md                # 🌐 Por que Nginx dentro do Docker?
+├── WORKFLOW_REMOTO.md                # 💻 Local vs Remoto: como desenvolver?
+├── vps-deployment-guide.md           # 🚀 Guia completo de deploy na VPS
+├── postgresql-optimization.md        # 🔧 Configuração do PostgreSQL
+├── pm2-ecosystem.config.js           # ⚙️ Configuração PM2 (8GB)
+├── scripts/                          # Scripts de automação
+│   └── setup-vps.sh                  # Script de setup automático da VPS
+├── postgreSQL/                       # Scripts SQL para PostgreSQL
+│   └── 01-init-database.sql          # Script de inicialização
+└── docker/                           # Configurações Docker
+    ├── docker-compose.prod.yml       # Docker Compose (PostgreSQL 8GB)
+    └── docker-compose.yml            # Configuração original (referência)
 ```
 
 ---
@@ -113,4 +125,48 @@ export const mastra = new Mastra({
 
 ---
 
-*Última atualização: 2026-03-12*
+## 🚀 Deploy na VPS
+
+**MODO DESENVOLVIMENTO:** Remoto (VSCode SSH)  
+**STATUS:** Aguardando autorização - veja [`PLANO_EXECUCAO_VPS.md`](PLANO_EXECUCAO_VPS.md)
+
+Para configurar o ambiente de produção na VPS (5.189.185.146):
+
+1. **Leia o PLANO DE EXECUÇÃO:** [`PLANO_EXECUCAO_VPS.md`](PLANO_EXECUCAO_VPS.md)
+   - Ordem detalhada dos passos
+   - Checkpoints de validação
+   - Procedimento de rollback
+
+2. **Leia o guia completo:** [`vps-deployment-guide.md`](vps-deployment-guide.md)
+   - Explicações sobre Nginx e PM2
+   - Workflow de desenvolvimento remoto
+   - Configuração de firewall
+   - Integração Nginx + Mastra Studio
+
+3. **Entenda a arquitetura:** [`ARCHITECTURE.md`](ARCHITECTURE.md)
+   - Por que PM2 fora do Docker
+   - Por que Nginx dentro do Docker
+   - Fluxo de comunicação entre serviços
+
+4. **Use as configurações:**
+   - [`docker/docker-compose.prod.yml`](docker/docker-compose.prod.yml) - PostgreSQL + Nginx
+   - [`pm2-ecosystem.config.js`](pm2-ecosystem.config.js) - Mastra Studio
+   - [`scripts/setup-vps.sh`](scripts/setup-vps.sh) - Setup automático
+
+### Resumo da Alocação de Recursos (AMPLIADA)
+
+Como a VPS tem **24GB RAM disponíveis**, os recursos foram AMPLIADOS:
+
+| Serviço | RAM | CPU | Propósito | Status |
+|---------|-----|-----|-----------|--------|
+| **PostgreSQL** | **8GB** | **3 cores** | Cache para RAG/embeddings | ⬆️ AMPLIADO |
+| **Mastra Studio (PM2)** | **8GB** | **3 cores** | Agents e workflows | ⬆️ AMPLIADO |
+| **Nginx** | **1GB** | **1 core** | Proxy reverso + SSL | ⬆️ AMPLIADO |
+| **SO** | ~6GB | 1 core | Sistema operacional | Margem |
+| **Total** | **~23GB** | **8 cores** | - | VPS: 24GB/8cores |
+
+**Margem de segurança:** ~1GB RAM para picos de uso
+
+---
+
+*Última atualização: 2026-03-13*

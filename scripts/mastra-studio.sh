@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================
-# XpertIA - Script de Inicialização do Mastra Studio
+# Xpert - Script de Inicialização do Mastra Studio
 # ============================================
 # Este script gerencia todo o ciclo de vida do Mastra Studio:
 # 1. Verifica conexão direta com PostgreSQL (VPS)
@@ -30,7 +30,7 @@ NC='\033[0m' # No Color
 # Diretórios
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-XPERTIA_DIR="$PROJECT_ROOT/XpertIA"
+XPERTIA_DIR="$PROJECT_ROOT/Xpert"
 LOG_FILE="/tmp/mastra-studio.log"
 PID_FILE="/tmp/mastra-studio.pid"
 
@@ -68,16 +68,16 @@ log_error() {
 check_dependencies() {
     log_info "Verificando dependências..."
     
-    # Verificar se XpertIA existe
+    # Verificar se Xpert existe
     if [ ! -d "$XPERTIA_DIR" ]; then
-        log_error "Diretório XpertIA não encontrado em $XPERTIA_DIR"
+        log_error "Diretório Xpert não encontrado em $XPERTIA_DIR"
         exit 1
     fi
     
     # Verificar .env
     if [ ! -f "$XPERTIA_DIR/.env" ]; then
         log_error "Arquivo .env não encontrado em $XPERTIA_DIR/.env"
-        log_info "Certifique-se de que o arquivo .env existe em XpertIA/"
+        log_info "Certifique-se de que o arquivo .env existe em Xpert/"
         exit 1
     fi
     
@@ -205,7 +205,7 @@ show_logs() {
 }
 
 show_status() {
-    echo -e "${GREEN}=== Status do XpertIA ===${NC}"
+    echo -e "${GREEN}=== Status do Xpert ===${NC}"
     echo ""
     
     # Status do PostgreSQL (conexão direta)
@@ -240,7 +240,7 @@ show_status() {
 # ============================================
 
 cmd_start() {
-    echo -e "${GREEN}=== Iniciando XpertIA ===${NC}"
+    echo -e "${GREEN}=== Iniciando Xpert ===${NC}"
     echo ""
     
     check_dependencies
@@ -258,7 +258,7 @@ cmd_start() {
     
     if start_studio; then
         echo ""
-        log_success "XpertIA está pronto!"
+        log_success "Xpert está pronto!"
         echo ""
         echo -e "${BLUE}Acesse:${NC} http://localhost:4111"
         echo -e "${BLUE}Logs:${NC}   ./scripts/mastra-studio.sh logs"
@@ -273,13 +273,13 @@ cmd_start() {
 # ============================================
 
 cmd_stop() {
-    echo -e "${YELLOW}=== Parando XpertIA ===${NC}"
+    echo -e "${YELLOW}=== Parando Xpert ===${NC}"
     echo ""
     
     stop_studio
     echo ""
     
-    log_success "XpertIA parado"
+    log_success "Xpert parado"
 }
 
 # ============================================

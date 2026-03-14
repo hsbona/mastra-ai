@@ -1,4 +1,4 @@
-# Análise do Esquema de Banco de Dados - XpertIA
+# Análise do Esquema de Banco de Dados - Xpert
 
 **Data da análise:** 2026-03-12  
 **Objetivo:** Identificar estrutura existente, decisões arquiteturais e configuração para Mastra

@@ -1,0 +1,153 @@
+# ============================================================
+# XpertIA - Docker Compose para Produção (AMPLIADO)
+# ============================================================
+# VM: 24GB RAM | 8 Cores CPU
+# Configuração: Recursos AMPLIADOS para máximo desempenho
+# Data: 2026-03-13
+# ============================================================
+# Serviços:
+#   - PostgreSQL + pgvector (8GB RAM, 3 cores)
+#   - Nginx (1GB RAM, 1 core)
+# ============================================================
+
+version: '3.9'
+
+services:
+  # ============================================================
+  # PostgreSQL + pgvector (CONFIGURAÇÃO AMPLIADA)
+  # Recursos: 8GB RAM | 3 cores
+  # STATUS: OBRIGATÓRIO
+  # ============================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: xpertia-postgres
+    hostname: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-xpertia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-xpertia_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-xpertia}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=pt_BR.UTF-8"
+      
+      # ============================================================
+      # Tuning PostgreSQL AMPLIADO para 24GB RAM
+      # ============================================================
+      # Memória principal (25% da RAM alocada ao container)
+      POSTGRES_SHARED_BUFFERS: "2GB"
+      # Cache do SO (estimativa generosa)
+      POSTGRES_EFFECTIVE_CACHE_SIZE: "6GB"
+      # Memória por operação (queries complexas, RAG)
+      POSTGRES_WORK_MEM: "64MB"
+      # Manutenção (VACUUM, CREATE INDEX, REINDEX)
+      POSTGRES_MAINTENANCE_WORK_MEM: "512MB"
+      # Conexões (generoso para múltiplos agents)
+      POSTGRES_MAX_CONNECTIONS: "200"
+      
+      # WAL tuning generoso
+      POSTGRES_WAL_BUFFERS: "64MB"
+      POSTGRES_MIN_WAL_SIZE: "2GB"
+      POSTGRES_MAX_WAL_SIZE: "8GB"
+      POSTGRES_CHECKPOINT_COMPLETION_TARGET: "0.9"
+      
+      # Query planner para SSD
+      POSTGRES_RANDOM_PAGE_COST: "1.1"
+      POSTGRES_EFFECTIVE_IO_CONCURRENCY: "300"
+      
+      # Performance adicional
+      POSTGRES_DEFAULT_STATISTICS_TARGET: "200"
+      POSTGRES_EFFECTIVE_PARALLEL_WORKERS: "6"
+      
+    ports:
+      - "0.0.0.0:5432:5432"
+      
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql/data
+      - type: bind
+        source: ./postgreSQL
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+        
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-xpertia} -d ${POSTGRES_DB:-xpertia}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+      
+    networks:
+      - xpertia-backend
+      
+    deploy:
+      resources:
+        limits:
+          # AMPLIADO: 8GB RAM, 3 cores
+          cpus: '3.0'
+          memory: 8G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+          
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # ============================================================
+  # Nginx - Proxy Reverso (CONFIGURAÇÃO AMPLIADA)
+  # Recursos: 1GB RAM | 1 core
+  # 
+  # NOTA: Usa network_mode: host para acessar Mastra em localhost:4111
+  # O Mastra roda FORA do Docker (via PM2), então o Nginx precisa
+  # acessar o host diretamente
+  # ============================================================
+  nginx:
+    image: nginx:alpine
+    container_name: xpertia-nginx
+    hostname: nginx
+    restart: unless-stopped
+    # Network mode host permite acessar localhost:4111 (Mastra)
+    network_mode: host
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - type: bind
+        source: ./configs/nginx/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+      - type: bind
+        source: ./configs/nginx/conf.d
+        target: /etc/nginx/conf.d
+        read_only: true
+      # Cache directory
+      - type: volume
+        source: nginx_cache
+        target: /var/cache/nginx
+    deploy:
+      resources:
+        limits:
+          # AMPLIADO: 1GB RAM, 1 core
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    driver: local
+  nginx_cache:
+    driver: local
+
+networks:
+  xpertia-backend:
+    driver: bridge
+    # Nginx usa network_mode: host para acessar Mastra em localhost:4111

@@ -847,7 +847,7 @@ export const processamentoInteligenteWorkflow = createWorkflow({
 ## Estrutura de Diretórios
 
 ```
-XpertIA/
+Xpert/
 ├── src/
 │   └── mastra/
 │       ├── index.ts                    # Entry point do Mastra

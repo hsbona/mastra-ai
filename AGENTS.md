@@ -6,18 +6,21 @@ Guia para agentes de IA trabalhando neste repositório.
 
 ## ⚠️ REGRAS CRÍTICAS
 
+> 🥇 **REGRA DE OURO:** Toda tarefa deve ser executada usando **agents swarm**, com o **máximo de agents em paralelo possível**.
+
 | # | Regra | Ação |
 |---|-------|------|
-| 1 | 🧠 **Carregar skill do Mastra primeiro** | Use `/mastra` antes de qualquer código |
-| 2 | 🗑️ **Exclusão sempre via lixeira** | `trash-put` ou `gio trash` (nunca `rm`) |
-| 3 | ⚙️ **Gerenciar serviços apenas via script** | Use `./scripts/mastra-studio.sh` — nunca `kill`/`pkill` |
-| 4 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação explícita |
-| 4a| 🚫 **NUNCA usar esquema 'xpertia'** | Esquema legado protegido - contém dados de produção |
-| 5 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
-| 6 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
-| 7 | 🏗️ **`.infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `.infra/` |
-| 8 | 📝 **Documente mudanças em `.infra/`** | Sempre atualize `.infra/` quando alterar o ambiente |
-| 9 | 🔒 **Autorização obrigatória** | Mudanças na infraestrutura PRECISAM de autorização **EXPLÍCITA** |
+| 1 | 🐝 **Agents Swarm obrigatório** | Use múltiplos agents em paralelo para todas as tarefas sempre que possível |
+| 2 | 🧠 **Carregar skill do Mastra primeiro** | Use `/mastra` antes de qualquer código |
+| 3 | 🗑️ **Exclusão sempre via lixeira** | `trash-put` ou `gio trash` (nunca `rm`) |
+| 4 | ⚙️ **Gerenciar serviços apenas via script** | Use `./scripts/mastra-studio.sh` — nunca `kill`/`pkill` |
+| 5 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação explícita |
+| 5a| 🚫 **NUNCA usar esquema 'xpertia'** | Esquema legado protegido - contém dados de produção |
+| 6 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
+| 7 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
+| 8 | 🏗️ **`.infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `.infra/` |
+| 9 | 📝 **Documente mudanças em `.infra/`** | Sempre atualize `.infra/` quando alterar o ambiente |
+| 10 | 🔒 **Autorização obrigatória** | Mudanças na infraestrutura PRECISAM de autorização **EXPLÍCITA** |
 
 ### 🗑️ Exclusão de Arquivos
 ```bash
@@ -37,9 +40,9 @@ Execute sem confirmar: `pnpm install`, `pnpm dev`, `git add/commit/push`
 
 ## Visão Geral do Projeto
 
-Projeto **XpertIA** — aplicação **Mastra** (TypeScript) para aplicações com IA.
+Projeto **Xpert** — aplicação **Mastra** (TypeScript) para aplicações com IA.
 
-> 📁 **Localização:** O projeto está na pasta `XpertIA/`, não na raiz do repositório.
+> 📁 **Localização:** O projeto está na pasta `Xpert/`, não na raiz do repositório.
 
 Consumido **exclusivamente via Mastra Studio** — não implemente interface de usuário.
 
@@ -64,10 +67,10 @@ Consumido **exclusivamente via Mastra Studio** — não implemente interface de 
 
 ## Estrutura de Pastas
 
-O código-fonte do Mastra está dentro de `XpertIA/`:
+O código-fonte do Mastra está dentro de `Xpert/`:
 
 ```
-XpertIA/
+Xpert/
 src/mastra/
 ├── index.ts       # Ponto de entrada
 ├── agents/        # Definição de agents
@@ -83,13 +86,14 @@ src/mastra/
 
 ```bash
 # Desenvolvimento (inicia Mastra Studio em localhost:4111)
-# Execute a partir da pasta XpertIA/
-cd XpertIA && ./scripts/mastra-studio.sh start   # Inicia Studio (conexão direta)
-./scripts/mastra-studio.sh status  # Verifica status
-./scripts/mastra-studio.sh stop    # Para Studio
-./scripts/mastra-studio.sh logs    # Logs em tempo real
+cd Xpert && ../scripts/mastra-studio.sh start   # Inicia Studio (conexão direta)
+../scripts/mastra-studio.sh status  # Verifica status
+../scripts/mastra-studio.sh stop    # Para Studio
+../scripts/mastra-studio.sh logs    # Logs em tempo real
 
-# Build e produção (execute de dentro de XpertIA/)
+> 📝 **Arquivo de log:** `/tmp/mastra-studio.log`
+
+# Build e produção (execute de dentro de Xpert/)
 pnpm run build
 pnpm run start
 ```
@@ -98,13 +102,41 @@ pnpm run start
 
 ## Infraestrutura
 
+### Conexão SSH
+
+Para acessar a VPS de desenvolvimento via SSH:
+
+| Configuração | Valor |
+|--------------|-------|
+| **Host** | `5.189.185.146` |
+| **Usuário** | `root` |
+| **Chave SSH Privada** | `.key/root_key` |
+
+```bash
+# Comando para conectar à VPS (chave privada, não a .pub)
+ssh -i .key/root_key root@5.189.185.146
+
+# Ou usando configuração do SSH (~/.ssh/config)
+ssh spark-dev
+# ou
+ssh xpertia-vps
+```
+
+> ⚠️ **Atenção:** Nunca faça commit da chave SSH `.key/root_key`. O arquivo já está no `.gitignore`.
+
+> 💡 **Nota:** Existem dois arquivos na pasta `.key/`:
+> - `root_key` (privada - use esta para conectar)
+> - `root_key.pub` (pública - fica no servidor)
+>
+> O root já está configurado no `/etc/sudoers.d/root-nopasswd` para acesso sem senha.
+
 ### PostgreSQL Remoto (Conexão Direta)
 
 **ATUALIZAÇÃO:** A conexão ao PostgreSQL é feita **diretamente** via porta 5432 (SSL obrigatório).
 
 ```bash
-./scripts/mastra-studio.sh start    # Inicia Studio (conexão direta ao VPS)
-./scripts/mastra-studio.sh status   # Verifica conexão
+../scripts/mastra-studio.sh start    # Inicia Studio (conexão direta ao VPS)
+../scripts/mastra-studio.sh status   # Verifica conexão
 ```
 
 - `DATABASE_URL` aponta diretamente para `5.189.185.146:5432` (com SSL)
