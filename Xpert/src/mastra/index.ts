@@ -43,9 +43,6 @@ export {
   semanticChunkingTool,
 } from './tools/document-processing-tools';
 
-// Exportar tools customizadas do workspace
-export { listWorkspaceFilesTool } from './tools/workspace-tools';
-
 // Exportar workflows de processamento de documentos
 export { documentSummarizeWorkflow, mapSummarizerAgent, reduceSummarizerAgent } from './workflows/document-summarize-workflow';
 export { documentTranslateWorkflow, glossaryExtractorAgent, translatorAgent } from './workflows/document-translate-workflow';

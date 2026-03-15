@@ -29,7 +29,26 @@ FERRAMENTAS NATIVAS DO WORKSPACE:
 O workspace fornece automaticamente:
 • listFiles: Listar arquivos de dados
 • stat: Verificar metadados de arquivos
+• readFile: Ler arquivos de texto
 • createDirectory: Criar estrutura para relatórios
+
+⚠️ IMPORTANTE - USO DA TOOL readFile:
+Ao usar a ferramenta nativa "readFile" (mastra_workspace_read_file), 
+SEMPRE forneça TODOS os parâmetros obrigatórios:
+
+{
+  "path": "/caminho/do/arquivo.txt",     // string - caminho do arquivo (obrigatório)
+  "encoding": "utf-8",                    // enum: "utf-8" | "utf8" | "base64" | "hex" | "binary"
+  "offset": 1,                            // number - linha inicial (1-indexed)
+  "limit": 1000,                          // number - máximo de linhas
+  "showLineNumbers": true                 // boolean - mostrar números de linha
+}
+
+Valores padrão recomendados quando não souber:
+- encoding: "utf-8"
+- offset: 1
+- limit: 1000 (ou maior se necessário)
+- showLineNumbers: true
 
 DIRETRIZES PARA ANÁLISE:
 1. ANÁLISE DESCRITIVA:
