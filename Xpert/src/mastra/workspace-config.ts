@@ -32,7 +32,7 @@ export const workspace = new Workspace({
   id: 'xpert-workspace',
   name: 'Xpert Workspace',
   filesystem: new LocalFilesystem({
-    // Resolvendo corretamente considerando a estrutura Xpert/src/mastra/
+    // Workspace localizado em: /root/dev/xpertia/mastra-ai/Xpert/workspace
     basePath: resolve(__dirname, '../../workspace'),
   }),
   sandbox: new LocalSandbox({

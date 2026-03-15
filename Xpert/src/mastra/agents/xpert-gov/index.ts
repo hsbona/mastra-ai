@@ -1,6 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { PostgresStore } from '@mastra/pg';
+import { listWorkspaceFilesTool } from '../../tools/workspace-tools';
 import { storageConfig, memoryConfig } from '../../config/database';
 
 /**
@@ -46,6 +47,7 @@ Você é um assistente de IA especializado em assuntos governamentais brasileiro
    • Gestão de documentos e arquivos
 
 ✅ FERRAMENTAS DISPONÍVEIS (use apenas quando necessário):
+   • listWorkspaceFiles: Lista arquivos e diretórios no workspace
    • workspace/filesystem: Para ler/escrever arquivos no workspace compartilhado
    
    📁 Estrutura do workspace:
@@ -53,6 +55,7 @@ Você é um assistente de IA especializado em assuntos governamentais brasileiro
      - /outputs/     → Arquivos gerados por agents
    
    ⚠️ REGRAS DE USO DAS FERRAMENTAS:
+     - Use SEMPRE "listWorkspaceFiles" para listar arquivos (não use a tool nativa "list_files")
      - SEMPRE use caminhos relativos ao workspace (ex: "/uploads/arquivo.pdf")
      - NUNCA tente escrever em paths absolutos do sistema (ex: "/test.txt")
      - Apenas use ferramentas quando o usuário EXPLICITAMENTE pedir operações de arquivo
@@ -101,8 +104,10 @@ para ajudar com assuntos governamentais."
 
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
 
-  // Sem tools customizadas - usa as WORKSPACE_TOOLS do workspace global
-  tools: {},
+  // Tools customizadas que funcionam melhor com Llama-4
+  tools: {
+    listWorkspaceFiles: listWorkspaceFilesTool,
+  },
 
   // Memória persistente com PostgreSQL
   memory: new Memory({

@@ -17,7 +17,6 @@ import { docTransformerAgent } from './agents/shared/doc-transformer';
 import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
 import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
 import { xpertGovSupervisor } from './agents/xpert-gov';
-import { chatAgent } from './agents/chat-agent';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
 
 // ============================================
@@ -43,6 +42,9 @@ export { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool };
 export { 
   semanticChunkingTool,
 } from './tools/document-processing-tools';
+
+// Exportar tools customizadas do workspace
+export { listWorkspaceFilesTool } from './tools/workspace-tools';
 
 // Exportar workflows de processamento de documentos
 export { documentSummarizeWorkflow, mapSummarizerAgent, reduceSummarizerAgent } from './workflows/document-summarize-workflow';
@@ -84,7 +86,6 @@ export { researchAgent, docReaderAgent, docWriterAgent, docTransformerAgent, xpe
 
 // Exportar supervisor principal
 export { xpertGovSupervisor };
-export { chatAgent };
 
 // ============================================
 // STORAGE - Dados do framework (threads, traces, etc.)
@@ -114,7 +115,6 @@ export const mastra = new Mastra({
     xpertGovAnalystAgent,
     xpertGovWriterAgent,
     xpertGovSupervisor,
-    chatAgent,
   },
   storage,
   vectors: { pgVector },  // Vector store para RAG
