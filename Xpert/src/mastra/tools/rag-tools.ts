@@ -4,7 +4,6 @@ import { queryRAG, listIndexes } from '../rag';
 
 export const queryRAGTool = createTool({
   id: 'query-rag',
-  name: 'Query RAG Knowledge Base',
   description: 'Consulta a base de conhecimento vetorial (RAG) para encontrar informações em documentos indexados. ' +
     'Use esta tool quando o usuário perguntar sobre legislação, normas, ou documentos específicos da base de conhecimento. ' +
     'A busca é semântica - entende o significado da pergunta, não apenas palavras-chave.',
@@ -53,7 +52,6 @@ export const queryRAGTool = createTool({
 
 export const listIndexesTool = createTool({
   id: 'list-rag-indexes',
-  name: 'List RAG Indexes',
   description: 'Lista todos os índices RAG disponíveis no sistema',
 
   inputSchema: z.object({}),

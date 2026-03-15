@@ -1,6 +1,7 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { PostgresStore } from '@mastra/pg';
+import { storageConfig, memoryConfig } from '../../config/database';
 
 /**
  * XPERT-GOV Supervisor
@@ -80,11 +81,8 @@ Você é um assistente de IA especializado em assuntos governamentais brasileiro
   memory: new Memory({
     storage: new PostgresStore({
       id: 'supervisor-memory',
-      connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',
-      schemaName: 'mastra',
+      ...storageConfig,
     }),
-    options: {
-      lastMessages: 20,
-    },
+    options: memoryConfig,
   }),
 });

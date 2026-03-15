@@ -1,14 +1,21 @@
 #!/usr/bin/env tsx
 /**
- * Script para indexar documentos na base de conhecimento RAG
+ * Script para indexar um único documento na base de conhecimento RAG
  * 
  * Uso:
  *   pnpm tsx scripts/index-document.ts <caminho-do-arquivo> [--index=nome-do-indice]
  * 
  * Exemplos:
- *   pnpm tsx scripts/index-document.ts knowledge-base/legislacao/Lei_8112_1ed.pdf
- *   pnpm tsx scripts/index-document.ts knowledge-base/legislacao/CF88_Livro_EC91_2016.pdf --index=constituicao
+ *   pnpm tsx scripts/index-document.ts workspace/uploads/documento.pdf
+ *   pnpm tsx scripts/index-document.ts workspace/uploads/documento.pdf --index=meu-indice
  */
+
+import { config } from 'dotenv';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+config({ path: join(__dirname, '../.env') });
 
 import { indexDocument, listIndexes } from '../src/mastra/rag/index.js';
 import * as path from 'path';

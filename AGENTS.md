@@ -120,7 +120,7 @@ curl -s https://mastra.ai/llms.txt | head -100
 | pnpm | 10.30.3 |
 | TypeScript | 5.9.3 |
 | Mastra Core | ^1.12.0 |
-| Modelo Padrão | groq/llama-3.3-70b-versatile |
+| Modelo Padrão | meta-llama/llama-4-scout-17b-16e-instruct |
 
 ---
 

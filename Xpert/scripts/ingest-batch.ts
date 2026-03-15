@@ -17,13 +17,36 @@ import { config } from 'dotenv';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: join(__dirname, '../.env') });
 
+#!/usr/bin/env tsx
+/**
+ * Script de ingestão em batch de documentos RAG
+ * 
+ * Características:
+ * - Processa múltiplos documentos em sequência
+ * - Batches de 5 chunks para embeddings
+ * - Move documentos processados para subpasta 'processados'
+ * 
+ * Uso:
+ *   pnpm tsx scripts/ingest-batch.ts
+ */
+
+import { readdirSync, renameSync, existsSync } from 'fs';
+import { join, basename, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { config } from 'dotenv';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+config({ path: join(__dirname, '../.env') });
+
+import { RAG_SCHEMA } from '../src/mastra/config/database';
+
 // ============================================
 // CONFIGURAÇÃO
 // ============================================
 const DOCS_DIR = join(__dirname, '../../docs/rag');
 const PROCESSED_DIR = join(DOCS_DIR, 'processados');
 const INDEX_NAME = 'legislacao';
-const SCHEMA = 'xpertia_rag';
+const SCHEMA = RAG_SCHEMA;
 const BATCH_SIZE = 5; // Apenas 5 chunks por vez
 
 // Ordem dos documentos

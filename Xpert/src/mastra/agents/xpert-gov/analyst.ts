@@ -1,5 +1,6 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
+import { workspace } from '../../workspace-config';
 import { readExcelTool } from '../../tools/file-tools';
 import { calculateTool } from '../../tools/web-tools';
 
@@ -23,6 +24,12 @@ SUA MISSÃO:
 ✓ Folha de pagamento de servidores
 ✓ Prestação de contas
 ✓ Indicadores de desempenho (KPIs governamentais)
+
+FERRAMENTAS NATIVAS DO WORKSPACE:
+O workspace fornece automaticamente:
+• listFiles: Listar arquivos de dados
+• stat: Verificar metadados de arquivos
+• createDirectory: Criar estrutura para relatórios
 
 DIRETRIZES PARA ANÁLISE:
 1. ANÁLISE DESCRITIVA:
@@ -65,6 +72,7 @@ SIGILO E LGPD:
 - Em caso de dúvida, consulte o solicitante sobre a natureza dos dados
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
+  workspace,  // ← Workspace nativo para operações de filesystem
   tools: { readExcelTool, calculateTool },
   memory: new Memory(),
 });

@@ -5,6 +5,7 @@ import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } fr
 
 // Workspace configuration (importado primeiro para evitar dependências circulares)
 import { workspace } from './workspace-config';
+import { storageConfig } from './config/database';
 
 import { pgVector } from './vector-store';
 import { documentSummarizeWorkflow } from './workflows/document-summarize-workflow';
@@ -40,9 +41,7 @@ export { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool };
 
 // Exportar tools de processamento de documentos
 export { 
-  documentProcessingTools,
-  estimateTokens,
-  semanticChunking,
+  semanticChunkingTool,
 } from './tools/document-processing-tools';
 
 // Exportar workflows de processamento de documentos
@@ -71,6 +70,15 @@ export {
   estimateOperationOverhead,
 } from './config/model-config';
 
+// Exportar configurações de banco
+export {
+  DATABASE_URL,
+  storageConfig,
+  vectorStoreConfig,
+  MASTRA_SCHEMA,
+  RAG_SCHEMA,
+} from './config/database';
+
 // Exportar agentes especializados
 export { researchAgent, docReaderAgent, docWriterAgent, docTransformerAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
 
@@ -84,8 +92,7 @@ export { chatAgent };
 // ============================================
 const storage = new PostgresStore({
   id: "mastra-storage",
-  connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',
-  schemaName: 'mastra',
+  ...storageConfig,
 });
 
 // pgVector é importado de './vector-store' para evitar ciclos de dependência

@@ -1,5 +1,6 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
+import { workspace } from '../../workspace-config';
 import { writeDOCXTool } from '../../tools/file-tools';
 
 export const xpertGovWriterAgent = new Agent({
@@ -15,6 +16,12 @@ SUA MISSÃO:
 - Adaptar o tom e formato conforme o tipo de documento
 - Garantir conformidade com as normas do governo federal
 - Produzir documentos claros, objetivos e bem estruturados
+
+FERRAMENTAS NATIVAS DO WORKSPACE:
+O workspace fornece automaticamente:
+• createDirectory: Criar estrutura de pastas para documentos
+• listFiles: Listar documentos existentes
+• writeFile: Salvar rascunhos em formato texto
 
 TIPOS DE DOCUMENTOS:
 
@@ -88,6 +95,7 @@ Antes de finalizar, verifique:
 □ O documento responde ao solicitado
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
+  workspace,  // ← Workspace nativo para operações de filesystem
   tools: { writeDOCXTool },
   memory: new Memory(),
 });
