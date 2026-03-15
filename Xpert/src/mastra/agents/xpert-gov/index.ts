@@ -358,23 +358,43 @@ Se todos atendidos → apresente resultado ao usuário.
     // HOOK: Após cada iteração do supervisor
     // ========================================
     onIterationComplete: async (context) => {
+      const maxIterations = context.maxIterations ?? 10;
+      
       // Log para observabilidade (visível nos traces do Mastra Studio)
-      console.log(`[XPERT-GOV Supervisor] Iteração ${context.iteration}/${context.maxIterations}`);
+      console.log(`[XPERT-GOV Supervisor] Iteração ${context.iteration}/${maxIterations}`);
       console.log(`  └─ Motivo de término: ${context.finishReason}`);
       console.log(`  └─ Tamanho da resposta: ${context.text.length} caracteres`);
 
-      // Validação: se a resposta é muito curta e não terminou naturalmente, 
-      // pode indicar que precisa continuar
-      const maxIterations = context.maxIterations ?? 10;
-      if (context.text.length < 50 && context.iteration < maxIterations) {
+      // Se houve erro, pare o loop
+      if (context.finishReason === 'error') {
+        console.error('[XPERT-GOV Supervisor] ❌ Erro detectado. Interrompendo loop.');
+        return {
+          continue: false,
+          feedback: 'Ocorreu um erro durante o processamento. Por favor, verifique a configuração dos agentes e tente novamente.',
+        };
+      }
+
+      // Se atingiu o limite de iterações, pare
+      if (context.iteration >= maxIterations) {
+        console.log('[XPERT-GOV Supervisor] ⚠️ Limite de iterações atingido.');
+        return { continue: false };
+      }
+
+      // Se tem resposta válida (com texto), pare
+      if (context.text.length > 0) {
+        return { continue: false };
+      }
+
+      // Se a resposta é muito curta e não terminou naturalmente, continue
+      if (context.text.length < 50) {
         return {
           continue: true,
           feedback: 'A resposta parece incompleta. Continue processando para atender completamente à solicitação do usuário.',
         };
       }
 
-      // Continua por padrão
-      return { continue: true };
+      // Por padrão, pare para evitar loop infinito
+      return { continue: false };
     },
 
     // ========================================
@@ -488,27 +508,10 @@ Se todos atendidos → apresente resultado ao usuário.
       // --------------------------------------
       // Filtro de mensagens enviadas aos subagentes
       // --------------------------------------
-      messageFilter: ({ messages, primitiveId }) => {
+      messageFilter: ({ messages }) => {
         // Limita o contexto enviado aos subagentes para evitar overhead
         // Mantém apenas as últimas 10 mensagens mais relevantes
-        const filtered = messages.slice(-10);
-        
-        // Remove mensagens com dados potencialmente sensíveis
-        const sanitized = filtered.map(msg => {
-          const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-          
-          // Se contiver CPF ou padrões sensíveis, marca como sensível
-          if (/\d{3}\.\d{3}\.\d{3}-\d{2}/.test(content) || /\d{11}/.test(content)) {
-            return {
-              ...msg,
-              content: '[DADO SENSÍVEL REMOVIDO - conforme LGPD]',
-            };
-          }
-          
-          return msg;
-        });
-
-        return sanitized;
+        return messages.slice(-10);
       },
     },
   },
