@@ -47,7 +47,7 @@ export const readPDFTool = createAgnosticTool({
   id: 'read-pdf',
   name: 'Read PDF',
   description: 'Extrai texto de arquivos PDF. Suporta paginação para arquivos grandes. Arquivos devem estar em workspace/uploads/',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     success: z.boolean(),
     text: z.string(),

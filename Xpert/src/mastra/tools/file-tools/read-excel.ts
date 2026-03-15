@@ -51,7 +51,7 @@ export const readExcelTool = createAgnosticTool({
   id: 'read-excel',
   name: 'Read Excel',
   description: 'Lê planilhas Excel (.xlsx, .xls) e CSV. Arquivos devem estar em workspace/uploads/',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     success: z.boolean(),
     data: z.array(z.record(z.string(), z.any())),

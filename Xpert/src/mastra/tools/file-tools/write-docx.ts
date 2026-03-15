@@ -66,7 +66,7 @@ export const writeDOCXTool = createAgnosticTool({
   id: 'write-docx',
   name: 'Write DOCX',
   description: 'Cria documentos Word (.docx) com formatação básica. Salva em workspace/outputs/',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     success: z.boolean(),
     filePath: z.string(),

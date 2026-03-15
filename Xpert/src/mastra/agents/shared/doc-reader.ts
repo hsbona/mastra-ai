@@ -87,7 +87,7 @@ DIRETRIZES DE LEITURA
 ═══════════════════════════════════════════════════════════════════
 
 ANTES DE LER:
-1. Use a ferramenta nativa "listFiles" para confirmar existência do arquivo
+1. Use a ferramenta "file_stat" para confirmar existência do arquivo
 2. Para PDFs grandes (>50 páginas), use paginação (startPage/endPage)
 
 LEITURA DE PDFs:
@@ -101,7 +101,7 @@ LEITURA DE EXCEL:
 - Confira sheetNames disponíveis no retorno
 
 LEITURA DE ARQUIVOS TEXTO:
-- Use a ferramenta nativa "readFile" para arquivos .txt, .md, .json
+- Use a ferramenta "read_file" para arquivos .txt, .md, .json
 
 ═══════════════════════════════════════════════════════════════════
 TRATAMENTO DE ERROS
@@ -123,13 +123,16 @@ ORGANIZAÇÃO DE ARQUIVOS
 - workspace/uploads/    → Arquivos de entrada (PDFs, DOCX, Excel)
 - workspace/outputs/    → Arquivos gerados por outros agents
 
-Use a ferramenta nativa "createDirectory" se precisar garantir que um diretório existe.
+Use a ferramenta "create_directory" se precisar garantir que um diretório existe.
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
   tools: {
     readPDFTool,
     readDOCXTool,
     readExcelTool,
+    list_files: listFilesSafe,
+    read_file: readFileSafe,
+    file_stat: fileStatSafe,
   },
   memory: new Memory(),
 });

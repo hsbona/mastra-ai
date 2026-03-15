@@ -37,7 +37,7 @@ export const readDOCXTool = createAgnosticTool({
   id: 'read-docx',
   name: 'Read DOCX',
   description: 'Extrai texto de documentos Word (.docx). Arquivos devem estar em workspace/uploads/',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     success: z.boolean(),
     text: z.string(),

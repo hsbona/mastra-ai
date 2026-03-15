@@ -1,10 +1,13 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { PostgresStore } from '@mastra/pg';
+import { createTool } from '@mastra/core/tools';
+import { z } from 'zod';
 import { storageConfig, memoryConfig } from '../../config/database';
 import {
   listFilesSafe,
   readFileSafe,
+  writeFileSafe,
   mkdirSafe,
   fileStatSafe,
 } from '../../tools/workspace-safe';
@@ -13,6 +16,106 @@ import { docReaderAgent } from '../shared/doc-reader';
 import { researchAgent } from '../shared/research';
 import { analystAgent } from './analyst';
 import { writerAgent } from './writer';
+
+// ============================================
+// TOOLS DE DELEGAÇÃO MANUAL (Workaround para schema do Mastra)
+// ============================================
+
+const docReaderTool = createTool({
+  id: 'delegate_doc_reader',
+  name: 'Delegate to Document Reader',
+  description: 'Delega para o Document Reader Agent extrair conteúdo de PDFs, DOCX, Excel. Use quando precisar ler documentos.',
+  inputSchema: z.object({
+    task: z.string().describe('Descrição completa da tarefa para o doc-reader'),
+  }),
+  outputSchema: z.object({
+    result: z.string(),
+    error: z.string().optional(),
+  }),
+  execute: async ({ task }) => {
+    try {
+      const response = await docReaderAgent.generate(task);
+      return { result: response.text };
+    } catch (error) {
+      return { 
+        result: '', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  },
+});
+
+const researchTool = createTool({
+  id: 'delegate_research',
+  name: 'Delegate to Research Agent',
+  description: 'Delega para o Research Agent fazer pesquisa web e consulta RAG. Use quando precisar de informações atualizadas.',
+  inputSchema: z.object({
+    task: z.string().describe('Descrição completa da tarefa para o research'),
+  }),
+  outputSchema: z.object({
+    result: z.string(),
+    error: z.string().optional(),
+  }),
+  execute: async ({ task }) => {
+    try {
+      const response = await researchAgent.generate(task);
+      return { result: response.text };
+    } catch (error) {
+      return { 
+        result: '', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  },
+});
+
+const analystTool = createTool({
+  id: 'delegate_analyst',
+  name: 'Delegate to Analyst Agent',
+  description: 'Delega para o Analyst Agent analisar dados estatisticamente. Use quando precisar de análise de dados.',
+  inputSchema: z.object({
+    task: z.string().describe('Descrição completa da tarefa para o analyst'),
+  }),
+  outputSchema: z.object({
+    result: z.string(),
+    error: z.string().optional(),
+  }),
+  execute: async ({ task }) => {
+    try {
+      const response = await analystAgent.generate(task);
+      return { result: response.text };
+    } catch (error) {
+      return { 
+        result: '', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  },
+});
+
+const writerTool = createTool({
+  id: 'delegate_writer',
+  name: 'Delegate to Writer Agent',
+  description: 'Delega para o Writer Agent criar documentos oficiais. Use quando precisar gerar ofícios, memorandos, relatórios.',
+  inputSchema: z.object({
+    task: z.string().describe('Descrição completa da tarefa para o writer'),
+  }),
+  outputSchema: z.object({
+    result: z.string(),
+    error: z.string().optional(),
+  }),
+  execute: async ({ task }) => {
+    try {
+      const response = await writerAgent.generate(task);
+      return { result: response.text };
+    } catch (error) {
+      return { 
+        result: '', 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      };
+    }
+  },
+});
 
 /**
  * XPERT-GOV Supervisor
@@ -78,6 +181,7 @@ Escolha UMA das opções:
   B) USAR TOOL DIRETA (use EXATAMENTE estes nomes)
      → web_search: Busca rápida na web
      → read_file: Ler arquivos de texto simples
+     → write_file: Escrever conteúdo em arquivos
      → list_files: Listar diretórios
      → create_directory: Criar pastas
      → file_stat: Informações de arquivos
@@ -133,7 +237,7 @@ PASSO 4 - DECIDIR:
 ═══════════════════════════════════════════════════════════════════
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ 📖 doc-reader (Document Reader Agent)                           │
+│ 📖 delegate_doc_reader (Document Reader Agent)                  │
 ├─────────────────────────────────────────────────────────────────┤
 │ FUNÇÃO: Extração de conteúdo de arquivos                        │
 │ FORMATOS: PDF, DOCX, Excel, TXT                                 │
@@ -143,7 +247,7 @@ PASSO 4 - DECIDIR:
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ 🔬 research (Research Agent)                                    │
+│ 🔬 delegate_research (Research Agent)                           │
 ├─────────────────────────────────────────────────────────────────┤
 │ FUNÇÃO: Pesquisa web + base de conhecimento RAG                 │
 │ CAPACIDADES: Busca DuckDuckGo + consulta vetorial interna       │
@@ -153,7 +257,7 @@ PASSO 4 - DECIDIR:
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ 📊 analyst (Analyst Agent)                                      │
+│ 📊 delegate_analyst (Analyst Agent)                             │
 ├─────────────────────────────────────────────────────────────────┤
 │ FUNÇÃO: Análise estatística de dados governamentais             │
 │ CAPACIDADES: Análise descritiva, diagnóstica, preditiva         │
@@ -163,7 +267,7 @@ PASSO 4 - DECIDIR:
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ ✍️ writer (Writer Agent)                                        │
+│ ✍️ delegate_writer (Writer Agent)                               │
 ├─────────────────────────────────────────────────────────────────┤
 │ FUNÇÃO: Redação de documentos oficiais do governo federal       │
 │ FORMATOS: Ofícios, memorandos, despachos, relatórios técnicos   │
@@ -178,22 +282,22 @@ PASSO 4 - DECIDIR:
 
 FLUXO 1: Pesquisa → Documento
   THINK: "Usuário quer pesquisa sobre tema X e gerar ofício"
-  ACT: delegar para research
+  ACT: usar tool delegate_research
   OBSERVE: Pesquisa concluída
   THINK: "Tenho dados, agora preciso do documento"
-  ACT: delegar para writer
+  ACT: usar tool delegate_writer
   OBSERVE: Documento gerado
   → COMPLETO
 
 FLUXO 2: Arquivo → Análise → Relatório
   THINK: "Usuário quer análise de planilha"
-  ACT: delegar para doc-reader (extrair dados)
+  ACT: usar tool delegate_doc_reader (extrair dados)
   OBSERVE: Dados extraídos
   THINK: "Tenho os dados, preciso analisar"
-  ACT: delegar para analyst
+  ACT: usar tool delegate_analyst
   OBSERVE: Análise concluída
   THINK: "Preciso gerar relatório final"
-  ACT: delegar para writer
+  ACT: usar tool delegate_writer
   → COMPLETO
 
 FLUXO 3: Raciocínio Direto
@@ -207,7 +311,7 @@ FLUXO 3: Raciocínio Direto
 
 1. ORDEM CORRETA
    ❌ NUNCA peça análise ANTES de extrair dados do arquivo
-   ✅ SEMPRE: doc-reader → analyst (quando necessário)
+   ✅ SEMPRE: delegate_doc_reader → delegate_analyst (quando necessário)
 
 2. RECUPERAÇÃO DE ERRO
    Se um especialista falhar:
@@ -246,22 +350,22 @@ Se completo → ENTREGUE ao usuário
 
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
 
-  // Tools rápidas para operações simples (agnósticas - sem dependência do workspace)
+  // Tools rápidas + delegação para especialistas
   tools: {
+    // Tools de filesystem
     list_files: listFilesSafe,
     read_file: readFileSafe,
+    write_file: writeFileSafe,
     create_directory: mkdirSafe,
     file_stat: fileStatSafe,
+    // Tools utilitárias
     web_search: webSearchTool,
     calculate: calculateTool,
-  },
-
-  // Subagentes especializados para tarefas complexas
-  agents: {
-    'doc-reader': docReaderAgent,
-    'research': researchAgent,
-    'analyst': analystAgent,
-    'writer': writerAgent,
+    // Tools de delegação para especialistas
+    delegate_doc_reader: docReaderTool,
+    delegate_research: researchTool,
+    delegate_analyst: analystTool,
+    delegate_writer: writerTool,
   },
 
   // Memória persistente
@@ -286,59 +390,6 @@ Se completo → ENTREGUE ao usuário
       if (toolCalls?.length) {
         console.log(`  Tools: ${toolCalls.map(t => t.toolName).join(', ')}`);
       }
-    },
-
-    // Hooks de delegação para controle de subagentes
-    delegation: {
-      // Antes de delegar
-      onDelegationStart: async (context) => {
-        console.log(`[XPERT-GOV Supervisor] Delegando para: ${context.primitiveId}`);
-        console.log(`  Iteração: ${context.iteration}`);
-
-        // Se já tentou muitas vezes, modifica o prompt para forçar alternativa
-        if (context.iteration > 3) {
-          return {
-            proceed: true,
-            modifiedPrompt: `${context.prompt}\n\n⚠️ ATENÇÃO: Tentativa ${context.iteration}. Se não conseguir completar, informe claramente o erro e pare.`,
-          };
-        }
-
-        return { proceed: true };
-      },
-
-      // Após delegação completar
-      onDelegationComplete: async (context) => {
-        console.log(`[XPERT-GOV Supervisor] Concluído: ${context.primitiveId}`);
-
-        // Em caso de erro
-        if (context.error) {
-          console.error(`[XPERT-GOV Supervisor] Erro: ${context.error}`);
-          
-          // Se já tentou muitas vezes, para
-          if (context.iteration > 10) {
-            context.bail({ 
-              reason: 'Máximo de tentativas atingido',
-            });
-            return {
-              feedback: `Máximo de tentativas atingido. Erro: ${context.error}. Informe o usuário sobre o erro.`,
-            };
-          }
-
-          // Caso contrário, tenta novamente com feedback
-          return {
-            feedback: `Erro anterior: ${context.error}. Tente uma abordagem diferente ou use outra ferramenta/especialista.`,
-          };
-        }
-
-        // Verifica se resultado é adequado
-        if (context.result && typeof context.result === 'string' && context.result.length < 50) {
-          return {
-            feedback: 'Resultado muito curto. Verifique se completou todas as etapas necessárias.',
-          };
-        }
-
-        return { feedback: undefined };
-      },
     },
   },
 });

@@ -189,6 +189,39 @@ export const mkdirSafe = createAgnosticTool({
   },
 });
 
+/** Escrever arquivo - versão ultra-permissiva */
+export const writeFileSafe = createAgnosticTool({
+  id: 'write_file',
+  name: 'Write File',
+  description: 'Write content to a file in the workspace. Creates directories if needed.',
+  inputSchema: z.object({}).passthrough(),
+  outputSchema: z.object({
+    path: z.string(),
+    success: z.boolean(),
+    bytesWritten: z.number(),
+  }),
+  execute: async (rawInput) => {
+    const input = normalizeInput(rawInput);
+    console.log('[write_file] Normalized input:', input);
+    
+    const path = String(input.path || '');
+    if (!path) {
+      throw new Error('Path is required');
+    }
+    
+    const content = String(input.content || '');
+    const encoding = (input.encoding as any) || 'utf-8';
+    
+    await workspace.filesystem.writeFile(path, content, { encoding });
+    
+    return { 
+      path, 
+      success: true, 
+      bytesWritten: Buffer.byteLength(content, encoding) 
+    };
+  },
+});
+
 /** Informações do arquivo - versão ultra-permissiva */
 export const fileStatSafe = createAgnosticTool({
   id: 'file_stat',
