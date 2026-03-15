@@ -3,7 +3,6 @@ import { PinoLogger } from '@mastra/loggers';
 import { PostgresStore } from '@mastra/pg';
 import { pgVector } from './vector-store';
 import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } from '@mastra/observability';
-import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
 import { documentSummarizeWorkflow } from './workflows/document-summarize-workflow';
 import { documentTranslateWorkflow } from './workflows/document-translate-workflow';
 import { researchAgent } from './agents/shared/research';
@@ -72,15 +71,6 @@ export { xpertGovSupervisor };
 export { chatAgent };
 
 // ============================================
-// WORKSPACE - Área de trabalho persistente
-// ============================================
-const workspace = new Workspace({
-  filesystem: new LocalFilesystem({
-    basePath: './workspace',
-  }),
-});
-
-// ============================================
 // STORAGE - Dados do framework (threads, traces, etc.)
 // Esquema: 'mastra' - isolado da aplicação
 // ============================================
@@ -110,7 +100,6 @@ export const mastra = new Mastra({
     xpertGovSupervisor,
     chatAgent,
   },
-  workspace,
   storage,
   vectors: { pgVector },  // Vector store para RAG
   logger: new PinoLogger({
