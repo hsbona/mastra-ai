@@ -19,30 +19,33 @@ import { workspace } from '../workspace-config';
  */
 export const listWorkspaceFilesTool = createTool({
   id: 'list_workspace_files',
-  name: 'List Workspace Files',
   description: `Lista arquivos e diretórios no workspace.
 
 Use esta ferramenta para listar conteúdo de diretórios.
 
 Parâmetros:
-- path: Caminho do diretório (obrigatório, ex: ".", "/uploads", "/outputs")
+- path: Caminho do diretório relativo ao workspace (ex: ".", "uploads", "outputs", "/uploads")
 
-Exemplo: { "path": "/uploads" }`,
+NOTA: Paths começando com "/" são automaticamente convertidos para relativos ao workspace.
+
+Exemplo: { "path": "uploads" }`,
   inputSchema: z.object({
-    path: z.string().describe('Caminho do diretório a listar (ex: ".", "/uploads", "/outputs")'),
+    path: z.string().describe('Caminho do diretório relativo ao workspace (ex: ".", "uploads", "outputs")'),
   }),
   outputSchema: z.object({
     tree: z.string().describe('Representação em árvore dos arquivos'),
     summary: z.string().describe('Resumo da listagem'),
   }),
-  execute: async ({ inputData }) => {
-    const { path } = inputData;
+  execute: async (inputData, context) => {
+    // Normaliza o path: remove barra inicial para torná-lo relativo ao workspace
+    let path = inputData?.path ?? '.';
+    if (path.startsWith('/')) {
+      path = path.slice(1);
+    }
     
     try {
       // Usa o filesystem do workspace diretamente
-      const result = await workspace.filesystem.list(path, {
-        recursive: false,
-      });
+      const result = await workspace.filesystem.readdir(path);
       
       // Formata como árvore
       const entries = Array.isArray(result) ? result : [result];
