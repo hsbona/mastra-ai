@@ -1,0 +1,2 @@
+* Implementar raciocínio dentro do agente
+* 

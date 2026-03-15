@@ -4,10 +4,15 @@ import { workspace } from '../../workspace-config';
 import { readExcelTool } from '../../tools/file-tools';
 import { calculateTool } from '../../tools/web-tools';
 
-export const xpertGovAnalystAgent = new Agent({
-  id: 'xpert-gov-analyst',
-  name: 'Xpert-Gov Analyst',
-  // Descrição otimizada para o Supervisor
+/**
+ * Analyst Agent
+ * 
+ * Especialista em análise de dados governamentais do setor público brasileiro.
+ * Realiza análises estatísticas, identifica anomalias e gera projeções orçamentárias.
+ */
+export const analystAgent = new Agent({
+  id: 'analyst',
+  name: 'Analyst Agent',
   description: 'Especialista em análise de dados governamentais do setor público brasileiro. Realiza análises estatísticas, identifica anomalias e gera projeções orçamentárias. Use para: analisar despesas públicas, licitações, folha de pagamento, prestação de contas. Recebe dados já extraídos (planilhas/dados). NÃO lê arquivos diretamente e NÃO redige documentos oficiais.',
   instructions: `
 Você é um analista especializado em dados governamentais do setor público brasileiro.
@@ -91,7 +96,7 @@ SIGILO E LGPD:
 - Em caso de dúvida, consulte o solicitante sobre a natureza dos dados
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
-  workspace,  // ← Workspace nativo para operações de filesystem
+  workspace,
   tools: { readExcelTool, calculateTool },
   memory: new Memory(),
 });

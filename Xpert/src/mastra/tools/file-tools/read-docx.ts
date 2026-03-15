@@ -1,23 +1,43 @@
 /**
- * Read DOCX Tool
+ * Read DOCX Tool - Versão Agnóstica
  * 
  * Extrai texto de documentos Word (.docx) usando mammoth.
+ * 
+ * Padrão: createAgnosticTool para compatibilidade com múltiplos LLMs
  */
 
-import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import mammoth from 'mammoth';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { resolveFilePath } from './utils';
+import { createAgnosticTool } from '../agnostic';
 
-export const readDOCXTool = createTool({
+function normalizeInput(input: unknown): { filePath: string; extractHtml?: boolean } {
+  if (typeof input !== 'object' || input === null) {
+    return { filePath: '' };
+  }
+  const obj = input as Record<string, unknown>;
+  
+  let filePath = '';
+  if (typeof obj.filePath === 'string') {
+    filePath = obj.filePath;
+  } else if (typeof obj.path === 'string') {
+    filePath = obj.path;
+  } else if (typeof obj.file === 'string') {
+    filePath = obj.file;
+  }
+  
+  const extractHtml = obj.extractHtml === true || obj.extractHtml === 'true' || obj.html === true;
+  
+  return { filePath, extractHtml };
+}
+
+export const readDOCXTool = createAgnosticTool({
   id: 'read-docx',
-  description: 'Extrai texto de documentos Word (.docx). Arquivos devem estar em Xpert/workspace/uploads/',
-  inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/documento.docx)'),
-    extractHtml: z.boolean().optional().describe('Retornar conteúdo em HTML (padrão: false)'),
-  }),
+  name: 'Read DOCX',
+  description: 'Extrai texto de documentos Word (.docx). Arquivos devem estar em workspace/uploads/',
+  inputSchema: z.record(z.any()),
   outputSchema: z.object({
     success: z.boolean(),
     text: z.string(),
@@ -32,7 +52,21 @@ export const readDOCXTool = createTool({
     }),
     error: z.string().optional(),
   }),
-  execute: async ({ filePath, extractHtml }) => {
+  execute: async (rawInput) => {
+    const input = normalizeInput(rawInput);
+    const filePath = input.filePath;
+    const extractHtml = input.extractHtml;
+    
+    if (!filePath) {
+      return {
+        success: false,
+        text: '',
+        headings: [],
+        metadata: { fileName: '', wordCount: 0 },
+        error: '❌ CAMINHO DO ARQUIVO NÃO FORNECIDO. Use filePath: "uploads/documento.docx"',
+      };
+    }
+    
     try {
       const fullPath = resolveFilePath(filePath);
       const fileBuffer = await fs.readFile(fullPath);
@@ -73,7 +107,7 @@ export const readDOCXTool = createTool({
         success: false,
         text: '',
         headings: [],
-        metadata: { fileName: '', wordCount: 0 },
+        metadata: { fileName: path.basename(filePath) || '', wordCount: 0 },
         error: error instanceof Error ? error.message : 'Erro desconhecido ao ler DOCX',
       };
     }

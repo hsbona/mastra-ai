@@ -1,25 +1,57 @@
 /**
- * Read Excel Tool
+ * Read Excel Tool - Versão Agnóstica
  * 
  * Lê planilhas Excel (.xlsx, .xls) e CSV usando xlsx.
+ * 
+ * Padrão: createAgnosticTool para compatibilidade com múltiplos LLMs
  */
 
-import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { resolveFilePath } from './utils';
+import { createAgnosticTool } from '../agnostic';
 
-export const readExcelTool = createTool({
+function normalizeInput(input: unknown): { 
+  filePath: string; 
+  sheetName?: string; 
+  range?: string; 
+  headerRow?: number;
+} {
+  if (typeof input !== 'object' || input === null) {
+    return { filePath: '' };
+  }
+  const obj = input as Record<string, unknown>;
+  
+  let filePath = '';
+  if (typeof obj.filePath === 'string') {
+    filePath = obj.filePath;
+  } else if (typeof obj.path === 'string') {
+    filePath = obj.path;
+  } else if (typeof obj.file === 'string') {
+    filePath = obj.file;
+  }
+  
+  const sheetName = typeof obj.sheetName === 'string' ? obj.sheetName :
+                   typeof obj.sheet === 'string' ? obj.sheet : undefined;
+  
+  const range = typeof obj.range === 'string' ? obj.range : undefined;
+  
+  const headerRow = typeof obj.headerRow === 'number' ? obj.headerRow :
+                   typeof obj.headerRow === 'string' ? parseInt(obj.headerRow, 10) || undefined :
+                   typeof obj.header === 'number' ? obj.header :
+                   typeof obj.header === 'string' ? parseInt(obj.header, 10) || undefined :
+                   undefined;
+  
+  return { filePath, sheetName, range, headerRow };
+}
+
+export const readExcelTool = createAgnosticTool({
   id: 'read-excel',
-  description: 'Lê planilhas Excel (.xlsx, .xls) e CSV. Arquivos devem estar em Xpert/workspace/uploads/',
-  inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/dados.xlsx)'),
-    sheetName: z.string().optional().describe('Nome da sheet (padrão: primeira sheet)'),
-    range: z.string().optional().describe('Range de células (ex: A1:D10)'),
-    headerRow: z.number().optional().describe('Linha do header (1-indexed, padrão: 1)'),
-  }),
+  name: 'Read Excel',
+  description: 'Lê planilhas Excel (.xlsx, .xls) e CSV. Arquivos devem estar em workspace/uploads/',
+  inputSchema: z.record(z.any()),
   outputSchema: z.object({
     success: z.boolean(),
     data: z.array(z.record(z.string(), z.any())),
@@ -34,7 +66,28 @@ export const readExcelTool = createTool({
     }),
     error: z.string().optional(),
   }),
-  execute: async ({ filePath, sheetName, range, headerRow }) => {
+  execute: async (rawInput) => {
+    const input = normalizeInput(rawInput);
+    const filePath = input.filePath;
+    const sheetName = input.sheetName;
+    const range = input.range;
+    const headerRow = input.headerRow;
+    
+    if (!filePath) {
+      return {
+        success: false,
+        data: [],
+        summary: {
+          totalRows: 0,
+          totalColumns: 0,
+          sheetNames: [],
+          columnNames: [],
+        },
+        metadata: { fileName: '' },
+        error: '❌ CAMINHO DO ARQUIVO NÃO FORNECIDO. Use filePath: "uploads/dados.xlsx"',
+      };
+    }
+    
     try {
       const fullPath = resolveFilePath(filePath);
       const fileBuffer = await fs.readFile(fullPath);
@@ -84,7 +137,7 @@ export const readExcelTool = createTool({
           sheetNames: [],
           columnNames: [],
         },
-        metadata: { fileName: '' },
+        metadata: { fileName: path.basename(filePath) || '' },
         error: error instanceof Error ? error.message : 'Erro desconhecido ao ler Excel',
       };
     }

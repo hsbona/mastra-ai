@@ -1,33 +1,83 @@
-import { createTool } from '@mastra/core/tools';
+/**
+ * RAG Tools - Versão Agnóstica
+ * 
+ * Ferramentas para consulta à base de conhecimento vetorial.
+ * 
+ * Padrão: createAgnosticTool para compatibilidade com múltiplos LLMs
+ */
+
 import { z } from 'zod';
 import { queryRAG, listIndexes } from '../rag';
+import { createAgnosticTool } from './agnostic';
 
-export const queryRAGTool = createTool({
+// ============================================
+// Tool 1: queryRAGTool - Consulta a base RAG
+// ============================================
+function normalizeQueryInput(input: unknown): { 
+  query: string; 
+  indexName: string; 
+  topK: number;
+} {
+  if (typeof input !== 'object' || input === null) {
+    return { query: '', indexName: 'default', topK: 5 };
+  }
+  const obj = input as Record<string, unknown>;
+  
+  const query = typeof obj.query === 'string' ? obj.query :
+               typeof obj.q === 'string' ? obj.q :
+               typeof obj.question === 'string' ? obj.question : '';
+  
+  const indexName = typeof obj.indexName === 'string' ? obj.indexName :
+                   typeof obj.index === 'string' ? obj.index :
+                   'default';
+  
+  let topK = 5;
+  if (typeof obj.topK === 'number') {
+    topK = obj.topK;
+  } else if (typeof obj.topK === 'string') {
+    topK = parseInt(obj.topK, 10) || 5;
+  } else if (typeof obj.limit === 'number') {
+    topK = obj.limit;
+  } else if (typeof obj.limit === 'string') {
+    topK = parseInt(obj.limit, 10) || 5;
+  }
+  
+  return { query, indexName, topK: Math.min(topK, 20) };
+}
+
+export const queryRAGTool = createAgnosticTool({
   id: 'query-rag',
+  name: 'Query RAG',
   description: 'Consulta a base de conhecimento vetorial (RAG) para encontrar informações em documentos indexados. ' +
     'Use esta tool quando o usuário perguntar sobre legislação, normas, ou documentos específicos da base de conhecimento. ' +
     'A busca é semântica - entende o significado da pergunta, não apenas palavras-chave.',
-
-  inputSchema: z.object({
-    query: z.string().describe('Pergunta ou tema de busca em linguagem natural'),
-    indexName: z.string().optional().describe('Nome do índice a consultar (default: "default")'),
-    topK: z.number().optional().describe('Número máximo de resultados (default: 5)'),
-  }),
-
+  inputSchema: z.record(z.any()),
   outputSchema: z.object({
     results: z.array(z.object({
-      content: z.string().describe('Conteúdo do chunk encontrado'),
-      source: z.string().describe('Nome do documento fonte'),
-      page: z.number().optional().describe('Número da página (se disponível)'),
-      score: z.number().describe('Score de relevância (0-1)'),
-      chunkIndex: z.number().describe('Índice do chunk no documento'),
+      content: z.string(),
+      source: z.string(),
+      page: z.number().optional(),
+      score: z.number(),
+      chunkIndex: z.number(),
     })),
     totalResults: z.number(),
     query: z.string(),
     indexName: z.string(),
+    error: z.string().optional(),
   }),
-
-  execute: async ({ query, indexName = 'default', topK = 5 }) => {
+  execute: async (rawInput) => {
+    const { query, indexName, topK } = normalizeQueryInput(rawInput);
+    
+    if (!query) {
+      return {
+        results: [],
+        totalResults: 0,
+        query: '',
+        indexName,
+        error: 'Query não fornecida',
+      };
+    }
+    
     try {
       const results = await queryRAG(query, indexName, topK);
 
@@ -45,24 +95,41 @@ export const queryRAGTool = createTool({
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`RAG query failed: ${message}`);
+      return {
+        results: [],
+        totalResults: 0,
+        query,
+        indexName,
+        error: `RAG query failed: ${message}`,
+      };
     }
   },
 });
 
-export const listIndexesTool = createTool({
+// ============================================
+// Tool 2: listIndexesTool - Lista índices RAG
+// ============================================
+export const listIndexesTool = createAgnosticTool({
   id: 'list-rag-indexes',
+  name: 'List RAG Indexes',
   description: 'Lista todos os índices RAG disponíveis no sistema',
-
-  inputSchema: z.object({}),
-
+  inputSchema: z.record(z.any()),
   outputSchema: z.object({
     indexes: z.array(z.string()),
     count: z.number(),
+    error: z.string().optional(),
   }),
-
   execute: async () => {
-    const indexes = await listIndexes();
-    return { indexes, count: indexes.length };
+    try {
+      const indexes = await listIndexes();
+      return { indexes, count: indexes.length };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return {
+        indexes: [],
+        count: 0,
+        error: `Failed to list indexes: ${message}`,
+      };
+    }
   },
 });

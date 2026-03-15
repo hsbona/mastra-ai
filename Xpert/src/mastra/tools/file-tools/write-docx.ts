@@ -1,30 +1,72 @@
 /**
- * Write DOCX Tool
+ * Write DOCX Tool - Versão Agnóstica
  * 
  * Cria documentos Word (.docx) com formatação básica.
+ * 
+ * Padrão: createAgnosticTool para compatibilidade com múltiplos LLMs
  */
 
-import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { workspace } from '../../workspace-config';
+import { createAgnosticTool } from '../agnostic';
 
-export const writeDOCXTool = createTool({
+interface ContentItem {
+  type: 'heading' | 'paragraph' | 'text';
+  text: string;
+  level?: number;
+  bold?: boolean;
+  italic?: boolean;
+}
+
+function normalizeInput(input: unknown): { fileName: string; outputPath: string; content: ContentItem[] } {
+  if (typeof input !== 'object' || input === null) {
+    return { fileName: '', outputPath: '', content: [] };
+  }
+  const obj = input as Record<string, unknown>;
+  
+  // Extrai fileName
+  let fileName = '';
+  if (typeof obj.fileName === 'string') {
+    fileName = obj.fileName;
+  } else if (typeof obj.filename === 'string') {
+    fileName = obj.filename;
+  } else if (typeof obj.name === 'string') {
+    fileName = obj.name;
+  }
+  
+  // Extrai outputPath
+  let outputPath = '';
+  if (typeof obj.outputPath === 'string') {
+    outputPath = obj.outputPath;
+  } else if (typeof obj.path === 'string') {
+    outputPath = obj.path;
+  } else if (typeof obj.output === 'string') {
+    outputPath = obj.output;
+  }
+  
+  // Extrai content
+  let content: ContentItem[] = [];
+  if (Array.isArray(obj.content)) {
+    content = obj.content.map((item: any) => ({
+      type: item.type || 'paragraph',
+      text: String(item.text || ''),
+      level: typeof item.level === 'number' ? item.level : undefined,
+      bold: item.bold === true,
+      italic: item.italic === true || item.italics === true,
+    }));
+  }
+  
+  return { fileName, outputPath, content };
+}
+
+export const writeDOCXTool = createAgnosticTool({
   id: 'write-docx',
+  name: 'Write DOCX',
   description: 'Cria documentos Word (.docx) com formatação básica. Salva em workspace/outputs/',
-  inputSchema: z.object({
-    fileName: z.string().describe('Nome do arquivo (sem extensão)'),
-    outputPath: z.string().describe('Caminho relativo à pasta workspace/outputs/ (ex: summaries/)'),
-    content: z.array(z.object({
-      type: z.enum(['heading', 'paragraph', 'text']),
-      text: z.string(),
-      level: z.number().optional(),
-      bold: z.boolean().optional(),
-      italic: z.boolean().optional(),
-    })),
-  }),
+  inputSchema: z.record(z.any()),
   outputSchema: z.object({
     success: z.boolean(),
     filePath: z.string(),
@@ -35,18 +77,32 @@ export const writeDOCXTool = createTool({
     }),
     error: z.string().optional(),
   }),
-  execute: async ({ context }) => {
+  execute: async (rawInput) => {
+    const input = normalizeInput(rawInput);
+    const fileName = input.fileName;
+    const outputPath = input.outputPath;
+    const content = input.content;
+    
+    if (!fileName) {
+      return {
+        success: false,
+        filePath: '',
+        metadata: { fileName: '', fullPath: '', paragraphCount: 0 },
+        error: '❌ NOME DO ARQUIVO NÃO FORNECIDO. Use fileName: "documento"',
+      };
+    }
+    
     try {
-      const outputDir = path.join(workspace.filesystem.basePath, 'outputs', context.outputPath);
+      const outputDir = path.join(workspace.filesystem.basePath, 'outputs', outputPath);
       
       await fs.mkdir(outputDir, { recursive: true });
       
-      const fileName = context.fileName.endsWith('.docx') ? context.fileName : `${context.fileName}.docx`;
-      const fullPath = path.join(outputDir, fileName);
+      const finalFileName = fileName.endsWith('.docx') ? fileName : `${fileName}.docx`;
+      const fullPath = path.join(outputDir, finalFileName);
       
       const children: Paragraph[] = [];
       
-      for (const item of context.content) {
+      for (const item of content) {
         if (item.type === 'heading') {
           children.push(
             new Paragraph({
@@ -79,9 +135,9 @@ export const writeDOCXTool = createTool({
       
       return {
         success: true,
-        filePath: path.join(context.outputPath, fileName),
+        filePath: path.join(outputPath, finalFileName),
         metadata: {
-          fileName,
+          fileName: finalFileName,
           fullPath,
           paragraphCount: children.length,
         },
@@ -90,7 +146,7 @@ export const writeDOCXTool = createTool({
       return {
         success: false,
         filePath: '',
-        metadata: { fileName: '', fullPath: '', paragraphCount: 0 },
+        metadata: { fileName: fileName || '', fullPath: '', paragraphCount: 0 },
         error: error instanceof Error ? error.message : 'Erro desconhecido ao criar DOCX',
       };
     }

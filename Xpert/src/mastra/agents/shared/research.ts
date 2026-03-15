@@ -3,10 +3,15 @@ import { Memory } from '@mastra/memory';
 import { webSearchTool, fetchURLTool, summarizeContentTool } from '../../tools/web-tools';
 import { queryRAGTool } from '../../tools/rag-tools';
 
+/**
+ * Research Agent
+ * 
+ * Especialista em pesquisa web e coleta de informações externas.
+ * Combina busca na web com consulta à base de conhecimento interna (RAG).
+ */
 export const researchAgent = new Agent({
   id: 'research',
   name: 'Research Agent',
-  // Descrição otimizada para o Supervisor - explica o QUE faz e o QUE retorna
   description: 'Especialista em pesquisa web e coleta de informações externas. Retorna dados estruturados em bullet points com fontes citadas. Use para: buscar informações atualizadas na internet, pesquisar legislação recente, coletar dados de fontes externas. NÃO escreve documentos formais.',
   instructions: `
 Você é um agente especializado em pesquisa web e sumarização de conteúdo.

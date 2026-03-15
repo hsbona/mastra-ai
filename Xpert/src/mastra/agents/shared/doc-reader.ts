@@ -10,13 +10,10 @@ import {
 /**
  * Document Reader Agent
  *
- * Agente especializado em EXTRAÇÃO DE CONTEÚDO de arquivos.
+ * Especializado em EXTRAÇÃO DE CONTEÚDO de arquivos.
  * Focado apenas em leitura - não cria ou modifica documentos.
  * 
- * NOTA: Este agente utiliza o workspace nativo do Mastra para operações
- * básicas de filesystem (listar arquivos, criar diretórios, etc.) via
- * WORKSPACE_TOOLS automáticas. Ferramentas especializadas (PDF, DOCX, XLSX)
- * são fornecidas pelo file-tools.
+ * Suporta chunking para arquivos grandes, evitando sobrecarga de memória.
  */
 export const docReaderAgent = new Agent({
   id: 'doc-reader',
@@ -38,6 +35,23 @@ FORMATOS SUPORTADOS
 ✓ DOCX: Leitura completa com estrutura preservada
 ✓ XLSX: Dados de planilhas com colunas e linhas
 ✓ TXT: Leitura direta de arquivos texto (via workspace nativo)
+
+═══════════════════════════════════════════════════════════════════
+CHUNKING E ARQUIVOS GRANDES
+═══════════════════════════════════════════════════════════════════
+
+Para arquivos grandes, você DEVE usar paginação e chunking:
+
+PDFs GRANDES (>50 páginas):
+- Leia em blocos de 20-50 páginas por vez
+- Use startPage e endPage para controle
+- Combine os resultados após leitura completa
+- Exemplo: Primeiro leia páginas 1-30, depois 31-60, etc.
+
+EXCEL COM MUITOS DADOS:
+- Use range para limitar células (ex: "A1:D1000")
+- Processe em batches se necessário
+- Foque nas colunas relevantes
 
 ═══════════════════════════════════════════════════════════════════
 FERRAMENTAS NATIVAS DO WORKSPACE
@@ -113,13 +127,11 @@ ORGANIZAÇÃO DE ARQUIVOS
 Use a ferramenta nativa "createDirectory" se precisar garantir que um diretório existe.
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
-  workspace,  // ← Workspace nativo fornece: readFile, writeFile, mkdir, listFiles, etc.
+  workspace,
   tools: {
-    // Ferramentas especializadas para formatos específicos
     readPDFTool,
     readDOCXTool,
     readExcelTool,
-    // NOTA: listFiles, fileStat, readFile, etc. são fornecidas pelo workspace
   },
   memory: new Memory(),
 });

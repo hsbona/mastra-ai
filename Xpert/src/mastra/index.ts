@@ -14,8 +14,8 @@ import { researchAgent } from './agents/shared/research';
 import { docReaderAgent } from './agents/shared/doc-reader';
 import { docWriterAgent } from './agents/shared/doc-writer';
 import { docTransformerAgent } from './agents/shared/doc-transformer';
-import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
-import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
+import { analystAgent } from './agents/xpert-gov/analyst';
+import { writerAgent } from './agents/xpert-gov/writer';
 import { xpertGovSupervisor } from './agents/xpert-gov';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
 
@@ -79,7 +79,7 @@ export {
 } from './config/database';
 
 // Exportar agentes especializados
-export { researchAgent, docReaderAgent, docWriterAgent, docTransformerAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
+export { researchAgent, docReaderAgent, docWriterAgent, docTransformerAgent, analystAgent, writerAgent };
 
 // Exportar supervisor principal
 export { xpertGovSupervisor };
@@ -109,8 +109,8 @@ export const mastra = new Mastra({
     docReaderAgent,
     docWriterAgent,
     docTransformerAgent,
-    xpertGovAnalystAgent,
-    xpertGovWriterAgent,
+    analystAgent,
+    writerAgent,
     xpertGovSupervisor,
   },
   storage,

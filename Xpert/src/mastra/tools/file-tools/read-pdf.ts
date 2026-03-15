@@ -1,26 +1,53 @@
 /**
- * Read PDF Tool
+ * Read PDF Tool - Versão Agnóstica
  * 
  * Extrai texto de arquivos PDF usando pdf2json.
  * Suporta paginação para arquivos grandes.
+ * 
+ * Padrão: createAgnosticTool para compatibilidade com múltiplos LLMs
  */
 
-import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
 import PDFParser from 'pdf2json';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { workspace } from '../../workspace-config';
 import { resolveFilePath } from './utils';
+import { createAgnosticTool } from '../agnostic';
 
-export const readPDFTool = createTool({
+function normalizeInput(input: unknown): { filePath: string; startPage?: number; endPage?: number } {
+  if (typeof input !== 'object' || input === null) {
+    return { filePath: '' };
+  }
+  const obj = input as Record<string, unknown>;
+  
+  // Extrai filePath de várias possibilidades
+  let filePath = '';
+  if (typeof obj.filePath === 'string') {
+    filePath = obj.filePath;
+  } else if (typeof obj.path === 'string') {
+    filePath = obj.path;
+  } else if (typeof obj.file === 'string') {
+    filePath = obj.file;
+  }
+  
+  // Extrai números de página
+  const startPage = typeof obj.startPage === 'number' ? obj.startPage : 
+                   typeof obj.startPage === 'string' ? parseInt(obj.startPage, 10) || undefined : 
+                   undefined;
+  
+  const endPage = typeof obj.endPage === 'number' ? obj.endPage : 
+                 typeof obj.endPage === 'string' ? parseInt(obj.endPage, 10) || undefined : 
+                 undefined;
+  
+  return { filePath, startPage, endPage };
+}
+
+export const readPDFTool = createAgnosticTool({
   id: 'read-pdf',
-  description: 'Extrai texto de arquivos PDF. Arquivos devem estar em Xpert/workspace/uploads/',
-  inputSchema: z.object({
-    filePath: z.string().describe('Caminho do arquivo relativo à pasta workspace/ (ex: uploads/documento.pdf)'),
-    startPage: z.number().optional().describe('Página inicial (1-indexed, padrão: 1)'),
-    endPage: z.number().optional().describe('Página final (inclusive, padrão: última)'),
-  }),
+  name: 'Read PDF',
+  description: 'Extrai texto de arquivos PDF. Suporta paginação para arquivos grandes. Arquivos devem estar em workspace/uploads/',
+  inputSchema: z.record(z.any()),
   outputSchema: z.object({
     success: z.boolean(),
     text: z.string(),
@@ -33,7 +60,21 @@ export const readPDFTool = createTool({
     }),
     error: z.string().optional(),
   }),
-  execute: async ({ filePath, startPage, endPage }) => {
+  execute: async (rawInput) => {
+    const input = normalizeInput(rawInput);
+    const filePath = input.filePath;
+    const startPage = input.startPage;
+    const endPage = input.endPage;
+    
+    if (!filePath) {
+      return {
+        success: false,
+        text: '',
+        metadata: { totalPages: 0, extractedPages: 0, fileName: '' },
+        error: '❌ CAMINHO DO ARQUIVO NÃO FORNECIDO. Use filePath: "uploads/documento.pdf"',
+      };
+    }
+    
     const fileName = path.basename(filePath);
     const fullPath = resolveFilePath(filePath);
     

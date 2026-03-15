@@ -44,6 +44,133 @@ Guia para agentes de IA trabalhando neste repositório.
 
 ---
 
+## 🛠️ Padrão de Tools: Agnostic Tools
+
+### Regra de Ouro
+**TODAS as tools customizadas DEVEM usar `createAgnosticTool`** para garantir compatibilidade com múltiplos provedores de LLM.
+
+### Por que isso é necessário?
+
+O Mastra nativo tem comportamentos inconsistentes entre provedores (OpenAI, Groq, Llama, etc):
+- Alguns LLMs enviam `null` em parâmetros opcionais
+- Outros enviam objetos aninhados ao invés de valores simples
+- Tipos podem variar (string vs number)
+
+Nossa camada `createAgnosticTool` normaliza essas variações automaticamente.
+
+### Como criar uma tool compatível
+
+```typescript
+import { z } from 'zod';
+import { createAgnosticTool } from './agnostic';
+
+// 1. Função de normalização de input
+function normalizeInput(input: unknown): { param1: string; param2?: number } {
+  if (typeof input !== 'object' || input === null) {
+    return { param1: '' };
+  }
+  const obj = input as Record<string, unknown>;
+  
+  // Extrai valores aceitando múltiplos nomes de parâmetros
+  const param1 = typeof obj.param1 === 'string' ? obj.param1 :
+                typeof obj.name === 'string' ? obj.name : '';
+  
+  const param2 = typeof obj.param2 === 'number' ? obj.param2 :
+                typeof obj.param2 === 'string' ? parseInt(obj.param2, 10) || undefined :
+                undefined;
+  
+  return { param1, param2 };
+}
+
+// 2. Criação da tool
+export const minhaTool = createAgnosticTool({
+  id: 'minha_tool',
+  name: 'Minha Tool',
+  description: 'Descrição clara do que a tool faz',
+  inputSchema: z.record(z.any()), // SEMPRE ultra-permissivo
+  outputSchema: z.object({
+    success: z.boolean(),
+    data: z.any(),
+    error: z.string().optional(),
+  }),
+  execute: async (rawInput) => {
+    // 3. Normaliza o input
+    const input = normalizeInput(rawInput);
+    
+    if (!input.param1) {
+      return {
+        success: false,
+        data: null,
+        error: 'Parâmetro obrigatório não fornecido',
+      };
+    }
+    
+    try {
+      // ... lógica da tool
+      return { success: true, data: resultado };
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+      };
+    }
+  },
+});
+```
+
+### Princípios Importantes
+
+| Princípio | Implementação |
+|-----------|---------------|
+| **Input ultra-permissivo** | `z.record(z.any())` ao invés de schemas rígidos |
+| **Normalização explícita** | Função `normalizeInput()` que aceita múltiplos formatos |
+| **Tratamento de erro gracioso** | Sempre retornar objeto com `success` e `error` opcional |
+| **Nunca lançar exceções** | Retornar erro no output ao invés de `throw` |
+| **Chunking para dados grandes** | Processar em partes quando necessário |
+
+### Chunking Padrão
+
+Todas as tools que processam grandes volumes de dados DEVEM implementar chunking:
+
+```typescript
+// Exemplo de processamento com chunking
+export const processLargeFileTool = createAgnosticTool({
+  id: 'process-large-file',
+  // ...
+  execute: async (rawInput) => {
+    const { filePath, chunkSize = 1000 } = normalizeInput(rawInput);
+    
+    // Processa em chunks para não sobrecarregar memória
+    const results = [];
+    for (let offset = 0; ; offset += chunkSize) {
+      const chunk = await readChunk(filePath, offset, chunkSize);
+      if (chunk.length === 0) break;
+      
+      const processed = await processChunk(chunk);
+      results.push(processed);
+      
+      // Libera memória do chunk
+      if (global.gc) global.gc();
+    }
+    
+    return { success: true, data: results };
+  },
+});
+```
+
+### Ferramentas que já seguem o padrão
+
+- ✅ `workspace-safe.ts` - Tools de filesystem (list_files, read_file, etc.)
+- ✅ `web-tools.ts` - Web search, fetch URL, calculate
+- ✅ `rag-tools.ts` - Query RAG, list indexes
+- ✅ `file-tools/read-pdf.ts` - Leitura de PDFs
+- ✅ `file-tools/read-docx.ts` - Leitura de DOCX
+- ✅ `file-tools/read-excel.ts` - Leitura de Excel
+- ✅ `file-tools/write-docx.ts` - Escrita de DOCX
+
+---
+
 ## 🚀 Modo Yolo
 
 Execute sem confirmar: `pnpm install`, `pnpm dev`, `git add/commit/push`

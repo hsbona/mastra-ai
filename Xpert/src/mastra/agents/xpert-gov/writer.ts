@@ -3,10 +3,15 @@ import { Memory } from '@mastra/memory';
 import { workspace } from '../../workspace-config';
 import { writeDOCXTool } from '../../tools/file-tools';
 
-export const xpertGovWriterAgent = new Agent({
-  id: 'xpert-gov-writer',
-  name: 'Xpert-Gov Writer',
-  // Descrição otimizada para o Supervisor
+/**
+ * Writer Agent
+ * 
+ * Especialista em redação de documentos oficiais do governo federal brasileiro.
+ * Cria ofícios, memorandos, despachos e relatórios técnicos formatados.
+ */
+export const writerAgent = new Agent({
+  id: 'writer',
+  name: 'Writer Agent',
   description: 'Especialista em redação de documentos oficiais do governo federal brasileiro. Cria ofícios, memorandos, despachos e relatórios técnicos formatados conforme normas oficiais. Use APENAS quando houver conteúdo/informações prontas para o documento. NÃO pesquisa na web e NÃO analisa dados estatísticos.',
   instructions: `
 Você é um redator especializado em documentação oficial do governo federal brasileiro.
@@ -114,7 +119,7 @@ Antes de finalizar, verifique:
 □ O documento responde ao solicitado
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
-  workspace,  // ← Workspace nativo para operações de filesystem
+  workspace,
   tools: { writeDOCXTool },
   memory: new Memory(),
 });
