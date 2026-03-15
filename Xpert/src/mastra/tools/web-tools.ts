@@ -45,7 +45,7 @@ export const webSearchTool = createAgnosticTool({
   id: 'web-search',
   name: 'Web Search',
   description: 'Search the web using DuckDuckGo and return relevant results',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     results: z.array(
       z.object({
@@ -127,7 +127,7 @@ export const fetchURLTool = createAgnosticTool({
   id: 'fetch-url',
   name: 'Fetch URL',
   description: 'Fetch and extract clean text content from a URL',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     title: z.string(),
     metaDescription: z.string(),
@@ -273,7 +273,7 @@ export const summarizeContentTool = createAgnosticTool({
   id: 'summarize-content',
   name: 'Summarize Content',
   description: 'Summarize text content using AI with different styles',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     summary: z.string(),
     style: z.enum(['executive', 'detailed', 'bullet']),
@@ -379,7 +379,7 @@ export const calculateTool = createAgnosticTool({
   id: 'calculate',
   name: 'Calculate',
   description: 'Evaluate mathematical expressions with optional variables using mathjs',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     result: z.union([z.number(), z.string()]),
     steps: z.array(z.string()),

@@ -75,11 +75,16 @@ Escolha UMA das opções:
      → Quando for conhecimento geral ou explicação simples
      → Quando não precisar de dados externos
      
-  B) USAR TOOL DIRETA
-     → web-search: Para busca rápida na web
-     → read-file: Para ler arquivos de texto simples
-     → list-files: Para explorar diretórios
-     → calculate: Para cálculos matemáticos
+  B) USAR TOOL DIRETA (use EXATAMENTE estes nomes)
+     → web_search: Busca rápida na web
+     → read_file: Ler arquivos de texto simples
+     → list_files: Listar diretórios
+     → create_directory: Criar pastas
+     → file_stat: Informações de arquivos
+     → calculate: Cálculos matemáticos
+     
+     ⚠️ CRÍTICO: Use SEMPRE os nomes com UNDERSCORE (_).
+     NUNCA use tools com prefixo "mastra_workspace_".
      
   C) DELEGAR PARA ESPECIALISTA
      → doc-reader: Para extrair conteúdo de PDF/DOCX/Excel
@@ -108,10 +113,14 @@ PASSO 4 - DECIDIR:
    ✅ FAQ governamental
 
 2. TOOLS DIRETAS (Rápidas, sem delegar):
-   🔍 web-search: Busca simples na internet
-   📄 read-file: Arquivos de texto (.txt, .md, .json)
-   📁 list-files: Listar diretório
+   🔍 web_search: Busca simples na internet
+   📄 read_file: Arquivos de texto (.txt, .md, .json)
+   📁 list_files: Listar diretório
+   📂 create_directory: Criar pastas
+   📊 file_stat: Informações de arquivos
    🧮 calculate: Cálculos matemáticos
+   
+   ⚠️ Use SEMPRE os nomes com UNDERSCORE. Não use "mastra_workspace_*".
 
 3. SUBAGENTES ESPECIALIZADOS (Delegue para):
    📖 doc-reader: PDFs, DOCX, Excel (com chunking)
@@ -237,7 +246,7 @@ Se completo → ENTREGUE ao usuário
 
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
 
-  // Tools rápidas para operações simples
+  // Tools rápidas para operações simples (agnósticas - sem dependência do workspace)
   tools: {
     list_files: listFilesSafe,
     read_file: readFileSafe,

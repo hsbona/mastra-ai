@@ -2,6 +2,7 @@
  * Workspace Tools - Versão ULTRA-PERMISSIVA
  * 
  * Aceita QUALQUER formato de entrada do LLM e normaliza.
+ * Todas as tools usam createAgnosticTool para compatibilidade com múltiplos LLMs.
  */
 
 import { createAgnosticTool } from './agnostic';
@@ -63,13 +64,20 @@ export const listFilesSafe = createAgnosticTool({
   id: 'list_files',
   name: 'List Files',
   description: 'List files and directories in the workspace',
-  inputSchema: z.record(z.any()), // Aceita QUALQUER objeto
+  inputSchema: z.object({}).passthrough(),
+  outputSchema: z.object({
+    path: z.string(),
+    entries: z.array(z.object({
+      name: z.string(),
+      type: z.string(),
+      size: z.number().optional(),
+    })),
+    count: z.number(),
+  }),
   execute: async (rawInput) => {
-    // Normaliza o input
     const input = normalizeInput(rawInput);
     console.log('[list_files] Normalized input:', input);
     
-    // Extrai valores com defaults
     const path = String(input.path || '.');
     const maxDepth = Number(input.maxDepth || 2);
     const showHidden = input.showHidden === true || input.showHidden === 'true';
@@ -83,7 +91,6 @@ export const listFilesSafe = createAgnosticTool({
     
     const entries = await workspace.filesystem.readdir(path);
     
-    // Aplica filtros
     let filtered = entries;
     if (dirsOnly) {
       filtered = filtered.filter(e => e.type === 'directory');
@@ -109,7 +116,12 @@ export const readFileSafe = createAgnosticTool({
   id: 'read_file',
   name: 'Read File',
   description: 'Read the contents of a file from the workspace',
-  inputSchema: z.record(z.any()), // Aceita QUALQUER objeto
+  inputSchema: z.object({}).passthrough(),
+  outputSchema: z.object({
+    path: z.string(),
+    content: z.string(),
+    totalLines: z.number(),
+  }),
   execute: async (rawInput) => {
     const input = normalizeInput(rawInput);
     console.log('[read_file] Normalized input:', input);
@@ -124,7 +136,6 @@ export const readFileSafe = createAgnosticTool({
     
     const content = await workspace.filesystem.readFile(path, { encoding });
     
-    // Aplica offset/limit
     let processed = content;
     const lines = content.split('\n');
     const offset = Number(input.offset || 1);
@@ -136,7 +147,6 @@ export const readFileSafe = createAgnosticTool({
       processed = lines.slice(start, end).join('\n');
     }
     
-    // Adiciona números de linha
     if (showLineNumbers) {
       const startLine = offset;
       processed = processed
@@ -158,7 +168,11 @@ export const mkdirSafe = createAgnosticTool({
   id: 'create_directory',
   name: 'Create Directory',
   description: 'Create a directory in the workspace',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
+  outputSchema: z.object({
+    created: z.string(),
+    recursive: z.boolean(),
+  }),
   execute: async (rawInput) => {
     const input = normalizeInput(rawInput);
     console.log('[create_directory] Normalized input:', input);
@@ -180,7 +194,14 @@ export const fileStatSafe = createAgnosticTool({
   id: 'file_stat',
   name: 'File Stat',
   description: 'Get metadata about a file or directory',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
+  outputSchema: z.object({
+    path: z.string(),
+    exists: z.boolean(),
+    type: z.string(),
+    size: z.number().optional(),
+    modified: z.string().optional(),
+  }),
   execute: async (rawInput) => {
     const input = normalizeInput(rawInput);
     console.log('[file_stat] Normalized input:', input);

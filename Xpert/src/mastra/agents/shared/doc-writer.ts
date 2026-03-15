@@ -1,8 +1,12 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
-import { workspace } from '../../workspace-config';
 import { writeDOCXTool, writeExcelTool } from '../../tools/file-tools';
 import { writeLargeFileTool } from '../../tools/document-processing-tools';
+import {
+  listFilesSafe,
+  mkdirSafe,
+  fileStatSafe,
+} from '../../tools/workspace-safe';
 
 /**
  * Document Writer Agent
@@ -103,12 +107,14 @@ FLUXO TÍPICO
 4. Confirme sucesso informando: nome do arquivo, localização e resumo do conteúdo
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
-  workspace,  // ← Workspace nativo fornece: readFile, writeFile, mkdir, listFiles, etc.
   tools: {
     writeDOCXTool,
     writeExcelTool,
     writeLargeFileTool,
-    // NOTA: listFiles, fileStat, readFile, etc. são fornecidas pelo workspace
+    // Tools agnósticas de filesystem
+    list_files: listFilesSafe,
+    create_directory: mkdirSafe,
+    file_stat: fileStatSafe,
   },
   memory: new Memory(),
 });

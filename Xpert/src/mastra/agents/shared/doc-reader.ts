@@ -1,11 +1,16 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
-import { workspace } from '../../workspace-config';
 import {
   readPDFTool,
   readDOCXTool,
   readExcelTool,
 } from '../../tools/file-tools';
+import {
+  listFilesSafe,
+  readFileSafe,
+  mkdirSafe,
+  fileStatSafe,
+} from '../../tools/workspace-safe';
 
 /**
  * Document Reader Agent
@@ -54,34 +59,28 @@ EXCEL COM MUITOS DADOS:
 - Foque nas colunas relevantes
 
 ═══════════════════════════════════════════════════════════════════
-FERRAMENTAS NATIVAS DO WORKSPACE
+FERRAMENTAS DE FILESYSTEM (Agnósticas)
 ═══════════════════════════════════════════════════════════════════
 
-O workspace do Mastra fornece automaticamente:
-• listFiles: Listar arquivos e diretórios
-• readFile: Ler arquivos de texto
-• createDirectory: Criar diretórios
-• stat: Obter informações de arquivos
+Você tem acesso às seguintes tools de filesystem:
+• list_files: Listar arquivos e diretórios
+• read_file: Ler arquivos de texto
+• create_directory: Criar diretórios
+• file_stat: Obter informações de arquivos
 
-Use estas ferramentas nativas para operações básicas de filesystem.
-
-⚠️ IMPORTANTE - USO DA TOOL readFile:
-Ao usar a ferramenta nativa "readFile" (mastra_workspace_read_file), 
-SEMPRE forneça TODOS os parâmetros obrigatórios:
+⚠️ IMPORTANTE - USO DAS TOOLS:
+Ao usar as ferramentas de filesystem, SEMPRE forneça o caminho relativo ao workspace:
 
 {
-  "path": "/caminho/do/arquivo.txt",     // string - caminho do arquivo (obrigatório)
-  "encoding": "utf-8",                    // enum: "utf-8" | "utf8" | "base64" | "hex" | "binary"
-  "offset": 1,                            // number - linha inicial (1-indexed)
-  "limit": 1000,                          // number - máximo de linhas
-  "showLineNumbers": true                 // boolean - mostrar números de linha
+  "path": "uploads/arquivo.txt"  // string - caminho relativo (obrigatório)
 }
 
-Valores padrão recomendados quando não souber:
-- encoding: "utf-8"
-- offset: 1
-- limit: 1000 (ou maior se necessário)
-- showLineNumbers: true
+Para list_files:
+{
+  "path": "uploads"  // Diretório relativo ao workspace
+}
+
+O workspace base está em: Xpert/workspace/
 
 ═══════════════════════════════════════════════════════════════════
 DIRETRIZES DE LEITURA
@@ -127,7 +126,6 @@ ORGANIZAÇÃO DE ARQUIVOS
 Use a ferramenta nativa "createDirectory" se precisar garantir que um diretório existe.
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
-  workspace,
   tools: {
     readPDFTool,
     readDOCXTool,

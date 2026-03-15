@@ -51,7 +51,7 @@ export const queryRAGTool = createAgnosticTool({
   description: 'Consulta a base de conhecimento vetorial (RAG) para encontrar informações em documentos indexados. ' +
     'Use esta tool quando o usuário perguntar sobre legislação, normas, ou documentos específicos da base de conhecimento. ' +
     'A busca é semântica - entende o significado da pergunta, não apenas palavras-chave.',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     results: z.array(z.object({
       content: z.string(),
@@ -113,7 +113,7 @@ export const listIndexesTool = createAgnosticTool({
   id: 'list-rag-indexes',
   name: 'List RAG Indexes',
   description: 'Lista todos os índices RAG disponíveis no sistema',
-  inputSchema: z.record(z.any()),
+  inputSchema: z.object({}).passthrough(),
   outputSchema: z.object({
     indexes: z.array(z.string()),
     count: z.number(),

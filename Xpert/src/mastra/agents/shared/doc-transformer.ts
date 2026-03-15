@@ -1,11 +1,16 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
-import { workspace } from '../../workspace-config';
 import {
   estimateTokensTool,
   semanticChunkingTool,
   writeLargeFileTool,
 } from '../../tools/document-processing-tools';
+import {
+  listFilesSafe,
+  readFileSafe,
+  mkdirSafe,
+  fileStatSafe,
+} from '../../tools/workspace-safe';
 
 /**
  * Document Transformer Agent
@@ -142,12 +147,15 @@ ORGANIZAÇÃO DE SAÍDA
 - workspace/outputs/              → Outros arquivos processados
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
-  workspace,  // ← Workspace nativo fornece: readFile, writeFile, mkdir, listFiles, etc.
   tools: {
     estimateTokensTool,
     semanticChunkingTool,
     writeLargeFileTool,
-    // NOTA: listFiles, fileStat, readFile, etc. são fornecidas pelo workspace
+    // Tools agnósticas de filesystem
+    list_files: listFilesSafe,
+    read_file: readFileSafe,
+    create_directory: mkdirSafe,
+    file_stat: fileStatSafe,
   },
   memory: new Memory(),
 });
