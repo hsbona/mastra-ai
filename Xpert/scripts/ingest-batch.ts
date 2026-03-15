@@ -1,24 +1,5 @@
 #!/usr/bin/env tsx
 /**
- * Script SIMPLIFICADO de ingestão de documentos RAG
- * 
- * Características:
- * - Batches de 5 chunks
- * - Sem transações longas (upsert individual)
- * - Execução local
- * - 3 documentos apenas
- */
-
-import { readdirSync, statSync, renameSync, existsSync } from 'fs';
-import { join, basename, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { config } from 'dotenv';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: join(__dirname, '../.env') });
-
-#!/usr/bin/env tsx
-/**
  * Script de ingestão em batch de documentos RAG
  * 
  * Características:
@@ -220,6 +201,7 @@ function moverParaProcessados(filePath: string): void {
 async function main(): Promise<void> {
   console.log('\n' + '='.repeat(70));
   console.log('📚 INGESTÃO SIMPLIFICADA - BATCHES DE 5 CHUNKS');
+  console.log(`📁 Schema: ${SCHEMA}`);
   console.log('='.repeat(70));
   
   // Limpar dados
