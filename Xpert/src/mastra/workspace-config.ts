@@ -16,17 +16,23 @@ const __dirname = dirname(__filename);
 /**
  * Workspace nativo do Mastra para operações de filesystem.
  * 
- * Fornece automaticamente:
- * - WORKSPACE_TOOLS.LIST_FILES: Listar diretórios
- * - WORKSPACE_TOOLS.READ_FILE: Ler arquivos (texto/binário)
- * - WORKSPACE_TOOLS.WRITE_FILE: Escrever arquivos
- * - WORKSPACE_TOOLS.DELETE_FILE: Deletar arquivos
- * - WORKSPACE_TOOLS.CREATE_DIRECTORY: Criar diretórios
- * - WORKSPACE_TOOLS.STAT: Metadados de arquivos
- * - WORKSPACE_TOOLS.GREP: Busca em conteúdo
- * - WORKSPACE_TOOLS.EXECUTE_COMMAND: Execução de comandos (via LocalSandbox)
+ * Quando configurado em um Agent, fornece automaticamente as tools:
+ * - mastra_workspace_read_file: Ler arquivos
+ * - mastra_workspace_write_file: Escrever arquivos
+ * - mastra_workspace_edit_file: Editar arquivos
+ * - mastra_workspace_list_files: Listar diretórios
+ * - mastra_workspace_delete: Deletar arquivos
+ * - mastra_workspace_file_stat: Metadados de arquivos
+ * - mastra_workspace_mkdir: Criar diretórios
+ * - mastra_workspace_grep: Buscar em conteúdo
+ * - mastra_workspace_execute_command: Executar comandos (via sandbox)
  * 
- * NOTA: Para PDFs, DOCX, XLSX - usar tools especializadas em file-tools.ts
+ * Para uso direto no código (sem LLM), use:
+ *   workspace.filesystem.readdir(path)  // Listar
+ *   workspace.filesystem.readFile(path) // Ler
+ *   workspace.filesystem.writeFile(path, content) // Escrever
+ * 
+ * NOTA: Para PDFs, DOCX, XLSX - usar tools especializadas em file-tools/
  */
 export const workspace = new Workspace({
   id: 'xpert-workspace',
@@ -43,7 +49,7 @@ export const workspace = new Workspace({
   }),
   // Indexação BM25 para busca em documentos de texto (opcional)
   bm25: true,
-  autoIndexPaths: ['/outputs'],  // Indexa automaticamente arquivos gerados
+  autoIndexPaths: ['outputs'],  // Indexa automaticamente arquivos gerados
 });
 
 // Exporta o basePath para conveniência

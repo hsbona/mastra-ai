@@ -103,12 +103,12 @@ FLUXO TÍPICO
 4. Confirme sucesso informando: nome do arquivo, localização e resumo do conteúdo
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
-  workspace,  // ← Workspace nativo fornece WORKSPACE_TOOLS automaticamente
+  workspace,  // ← Workspace nativo fornece: readFile, writeFile, mkdir, listFiles, etc.
   tools: {
     writeDOCXTool,
     writeExcelTool,
     writeLargeFileTool,
-    // NOTA: createDirectory, listFiles, writeFile são fornecidos pelo workspace
+    // NOTA: listFiles, fileStat, readFile, etc. são fornecidas pelo workspace
   },
   memory: new Memory(),
 });

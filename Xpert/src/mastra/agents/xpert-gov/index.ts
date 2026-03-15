@@ -56,11 +56,11 @@ Você é um assistente de IA especializado em assuntos governamentais brasileiro
    • createDirectory: Criar diretórios
    
    📁 Estrutura do workspace:
-     - /uploads/     → Arquivos enviados para processamento
-     - /outputs/     → Arquivos gerados por agents
+     - uploads/     → Arquivos enviados para processamento
+     - outputs/     → Arquivos gerados por agents
    
    ⚠️ REGRAS GERAIS:
-     - SEMPRE use caminhos relativos ao workspace (ex: "/uploads/arquivo.pdf")
+     - SEMPRE use caminhos relativos ao workspace (ex: "uploads/arquivo.pdf")
      - NUNCA tente escrever em paths absolutos do sistema (ex: "/test.txt")
      - Apenas use ferramentas quando o usuário EXPLICITAMENTE pedir operações de arquivo
 
@@ -69,7 +69,7 @@ Você é um assistente de IA especializado em assuntos governamentais brasileiro
 
      🔹 readFile (mastra_workspace_read_file):
      {
-       "path": "/uploads/arquivo.txt",         // string - caminho do arquivo (obrigatório)
+       "path": "uploads/arquivo.txt",         // string - caminho do arquivo (obrigatório)
        "encoding": "utf-8",                    // "utf-8" | "utf8" | "base64" | "hex" | "binary"
        "offset": 1,                            // number - linha inicial (1-indexed)
        "limit": 1000,                          // number - máximo de linhas
@@ -78,12 +78,11 @@ Você é um assistente de IA especializado em assuntos governamentais brasileiro
 
      🔹 listFiles (mastra_workspace_list_files):
      {
-       "path": "/uploads",                     // string - caminho do diretório (obrigatório)
-       "maxDepth": 2,                          // number - profundidade máxima
-       "showHidden": false,                    // boolean - mostrar arquivos ocultos
-       "dirsOnly": false,                      // boolean - apenas diretórios
-       "exclude": "node_modules",              // string - padrão para excluir (opcional)
-       "extension": ".txt"                     // string - filtrar por extensão (opcional)
+       "path": "uploads",                     // string - caminho do diretório (obrigatório)
+       "maxDepth": 2,                          // number - profundidade máxima (padrão: 10)
+       "showHidden": false,                    // boolean - mostrar arquivos ocultos (padrão: false)
+       "dirsOnly": false,                      // boolean - apenas diretórios (padrão: false)
+       "respectGitignore": true                // boolean - respeitar .gitignore (padrão: true)
      }
 
 ✅ AGENTES ESPECIALIZADOS DISPONÍVEIS:
@@ -130,7 +129,8 @@ para ajudar com assuntos governamentais."
 
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
 
-  // Workspace nativo fornece: readFile, listFiles, writeFile, stat, createDirectory
+  // Workspace nativo fornece automaticamente as tools:
+  // readFile, writeFile, editFile, delete, mkdir, grep, listFiles, fileStat
   workspace,
 
   // Memória persistente com PostgreSQL
