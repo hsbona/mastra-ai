@@ -1,22 +1,22 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { PostgresStore } from '@mastra/pg';
-import { workspace } from '../../workspace-config';
 import { storageConfig, memoryConfig } from '../../config/database';
+import {
+  listFilesSafe,
+  readFileSafe,
+  mkdirSafe,
+  fileStatSafe,
+} from '../../tools/workspace-safe';
 
 /**
  * XPERT-GOV Supervisor
  * 
  * Assistente especializado em assuntos governamentais.
  * 
- * NOTA: O padrão de subagentes automáticos foi removido devido a 
- * incompatibilidade com o modelo Groq/Llama-4, que não consegue 
- * validar corretamente o schema das ferramentas de delegação 
- * (especificamente o parâmetro maxSteps que espera number mas 
- * recebe string).
- * 
- * Alternativa: Cada agente especializado pode ser usado diretamente
- * pelo usuário através do Mastra Studio.
+ * NOTA: Usa tools safe (workspace-safe.ts) em vez do workspace nativo
+ * para garantir compatibilidade com Llama-4 e outros LLMs que enviam
+ * null em parâmetros opcionais.
  */
 export const xpertGovSupervisor = new Agent({
   id: 'xpert-gov-supervisor',
@@ -46,44 +46,21 @@ Você é um assistente de IA especializado em assuntos governamentais brasileiro
    • Licitações e contratos administrativos
    • Gestão de documentos e arquivos
 
-✅ FERRAMENTAS DE WORKSPACE (use apenas quando necessário):
-   
-   O workspace fornece automaticamente:
-   • readFile: Ler arquivos de texto
-   • listFiles: Listar arquivos e diretórios
-   • writeFile: Criar/escr ever arquivos
-   • stat: Metadados de arquivos
-   • createDirectory: Criar diretórios
+✅ FERRAMENTAS DE WORKSPACE:
    
    📁 Estrutura do workspace:
      - uploads/     → Arquivos enviados para processamento
      - outputs/     → Arquivos gerados por agents
    
-   ⚠️ REGRAS GERAIS:
+   🔹 list_files: Listar arquivos e diretórios
+   🔹 read_file: Ler arquivos de texto
+   🔹 create_directory: Criar diretórios
+   🔹 file_stat: Metadados de arquivos
+   
+   ⚠️ REGRAS:
      - SEMPRE use caminhos relativos ao workspace (ex: "uploads/arquivo.pdf")
-     - NUNCA tente escrever em paths absolutos do sistema (ex: "/test.txt")
-     - Apenas use ferramentas quando o usuário EXPLICITAMENTE pedir operações de arquivo
-
-   ⚠️ IMPORTANTE - USO DAS TOOLS NATIVAS:
-     Ao usar qualquer ferramenta nativa do workspace, SEMPRE forneça TODOS os parâmetros:
-
-     🔹 readFile (mastra_workspace_read_file):
-     {
-       "path": "uploads/arquivo.txt",         // string - caminho do arquivo (obrigatório)
-       "encoding": "utf-8",                    // "utf-8" | "utf8" | "base64" | "hex" | "binary"
-       "offset": 1,                            // number - linha inicial (1-indexed)
-       "limit": 1000,                          // number - máximo de linhas
-       "showLineNumbers": true                 // boolean - mostrar números de linha
-     }
-
-     🔹 listFiles (mastra_workspace_list_files):
-     {
-       "path": "uploads",                     // string - caminho do diretório (obrigatório)
-       "maxDepth": 2,                          // number - profundidade máxima (padrão: 10)
-       "showHidden": false,                    // boolean - mostrar arquivos ocultos (padrão: false)
-       "dirsOnly": false,                      // boolean - apenas diretórios (padrão: false)
-       "respectGitignore": true                // boolean - respeitar .gitignore (padrão: true)
-     }
+     - NUNCA use paths absolutos do sistema (ex: "/test.txt")
+     - Apenas use ferramentas quando o usuário pedir operações de arquivo
 
 ✅ AGENTES ESPECIALIZADOS DISPONÍVEIS:
    O sistema possui agentes especializados que podem ser usados 
@@ -129,9 +106,13 @@ para ajudar com assuntos governamentais."
 
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
 
-  // Workspace nativo fornece automaticamente as tools:
-  // readFile, writeFile, editFile, delete, mkdir, grep, listFiles, fileStat
-  workspace,
+  // Tools safe que aceitam null e outras variações entre LLMs
+  tools: {
+    list_files: listFilesSafe,
+    read_file: readFileSafe,
+    create_directory: mkdirSafe,
+    file_stat: fileStatSafe,
+  },
 
   // Memória persistente com PostgreSQL
   memory: new Memory({
