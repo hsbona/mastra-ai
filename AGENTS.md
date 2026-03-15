@@ -10,7 +10,7 @@ Guia para agentes de IA trabalhando neste repositório.
 |---|-------|------|
 | 1 | 🐝 **Agents Swarm obrigatório** | Use múltiplos agents em paralelo para todas as tarefas |
 | 2 | 🧠 **Carregar skill do Mastra primeiro** | Use `/mastra` antes de qualquer código |
-| 3 | 🗑️ **Exclusão sempre via lixeira** | `trash-put` ou `gio trash` (nunca `rm`) |
+| 3 | 🗑️ **Exclusão sempre via lixeira** | `gio trash` (preferido) ou `trash-put` (nunca `rm`)
 | 4 | ⚙️ **Gerenciar serviços via script** | Use `./scripts/mastra-studio.sh` — nunca `kill`/`pkill` |
 | 5 | 🔄 **Reiniciar para aplicar mudanças** | Use `./scripts/mastra-studio.sh restart` após alterar código |
 | 6 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação |
@@ -21,8 +21,10 @@ Guia para agentes de IA trabalhando neste repositório.
 
 ### 🗑️ Exclusão de Arquivos
 ```bash
-✅ trash-put arquivo.txt    gio trash arquivo.txt
-🚫 rm arquivo.txt           rm -rf pasta/
+✅ gio trash arquivo.txt         # Preferido - disponível nativamente
+✅ trash-put arquivo.txt         # Alternativa - requer instalação
+🚫 rm arquivo.txt                # PROIBIDO
+🚫 rm -rf pasta/                 # PROIBIDO
 ```
 
 ---

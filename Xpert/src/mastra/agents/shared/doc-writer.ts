@@ -1,15 +1,18 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
+import { workspace } from '../../workspace-config';
 import { writeDOCXTool, writeExcelTool } from '../../tools/file-tools';
 import { writeLargeFileTool } from '../../tools/document-processing-tools';
-import { createDirectoryTool } from '../../tools/system-tools';
 
 /**
  * Document Writer Agent
  * 
  * Agente especializado em CRIAÇÃO de documentos formatados.
  * Focado exclusivamente em escrita de DOCX, XLSX e TXT.
- * Não possui capacidades de leitura - use o doc-processor para isso.
+ * Não possui capacidades de leitura - use o doc-reader para isso.
+ * 
+ * NOTA: Este agente utiliza o workspace nativo do Mastra para operações
+ * básicas de filesystem (criar diretórios, listar, etc.) via WORKSPACE_TOOLS.
  */
 export const docWriterAgent = new Agent({
   id: 'doc-writer',
@@ -29,6 +32,17 @@ FORMATOS DE SAÍDA
 • DOCX: Documentos Word com formatação (títulos, parágrafos, negrito, itálico)
 • XLSX: Planilhas Excel com múltiplas abas, dados estruturados e headers formatados
 • TXT/MD: Arquivos texto puro ou markdown para conteúdo simples
+
+═══════════════════════════════════════════════════════════════════
+FERRAMENTAS NATIVAS DO WORKSPACE
+═══════════════════════════════════════════════════════════════════
+
+O workspace do Mastra fornece automaticamente:
+• createDirectory: Criar estrutura de diretórios
+• listFiles: Listar arquivos existentes
+• writeFile: Escrever arquivos de texto
+
+Use "createDirectory" para garantir que a estrutura de pastas existe antes de salvar.
 
 ═══════════════════════════════════════════════════════════════════
 DIRETRIZES DE CRIAÇÃO
@@ -51,11 +65,14 @@ PARA ARQUIVOS GRANDES (writeLargeFileTool):
 → Suporta: txt, md, docx
 → Escolha fileType adequado ao conteúdo
 
+PARA ARQUIVOS TEXTO SIMPLES:
+→ Use a ferramenta nativa "writeFile" do workspace
+
 ═══════════════════════════════════════════════════════════════════
 ORGANIZAÇÃO DE SAÍDA
 ═══════════════════════════════════════════════════════════════════
 • Salve em: workspace/outputs/ ou subpastas (ex: workspace/outputs/relatorios/)
-→ Use createDirectoryTool para criar estrutura de pastas se necessário
+→ Use a ferramenta nativa "createDirectory" para criar estrutura de pastas
 → Sempre retorne o caminho completo do arquivo criado ao usuário
 
 ═══════════════════════════════════════════════════════════════════
@@ -67,11 +84,12 @@ FLUXO TÍPICO
 4. Confirme sucesso informando: nome do arquivo, localização e resumo do conteúdo
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
+  workspace,  // ← Workspace nativo fornece WORKSPACE_TOOLS automaticamente
   tools: {
     writeDOCXTool,
     writeExcelTool,
     writeLargeFileTool,
-    createDirectoryTool,
+    // NOTA: createDirectory, listFiles, writeFile são fornecidos pelo workspace
   },
   memory: new Memory(),
 });

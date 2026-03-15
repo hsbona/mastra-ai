@@ -1,18 +1,22 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
+import { workspace } from '../../workspace-config';
 import {
   readPDFTool,
   readDOCXTool,
   readExcelTool,
-  listWorkspaceFilesTool,
 } from '../../tools/file-tools';
-import { createDirectoryTool } from '../../tools/system-tools';
 
 /**
  * Document Reader Agent
  *
  * Agente especializado em EXTRAÇÃO DE CONTEÚDO de arquivos.
  * Focado apenas em leitura - não cria ou modifica documentos.
+ * 
+ * NOTA: Este agente utiliza o workspace nativo do Mastra para operações
+ * básicas de filesystem (listar arquivos, criar diretórios, etc.) via
+ * WORKSPACE_TOOLS automáticas. Ferramentas especializadas (PDF, DOCX, XLSX)
+ * são fornecidas pelo file-tools.
  */
 export const docReaderAgent = new Agent({
   id: 'doc-reader',
@@ -33,14 +37,26 @@ FORMATOS SUPORTADOS
 ✓ PDF: Extração de texto com metadados de páginas
 ✓ DOCX: Leitura completa com estrutura preservada
 ✓ XLSX: Dados de planilhas com colunas e linhas
-✓ TXT: Leitura direta de arquivos texto
+✓ TXT: Leitura direta de arquivos texto (via workspace nativo)
+
+═══════════════════════════════════════════════════════════════════
+FERRAMENTAS NATIVAS DO WORKSPACE
+═══════════════════════════════════════════════════════════════════
+
+O workspace do Mastra fornece automaticamente:
+• listFiles: Listar arquivos e diretórios
+• readFile: Ler arquivos de texto
+• createDirectory: Criar diretórios
+• stat: Obter informações de arquivos
+
+Use estas ferramentas nativas para operações básicas de filesystem.
 
 ═══════════════════════════════════════════════════════════════════
 DIRETRIZES DE LEITURA
 ═══════════════════════════════════════════════════════════════════
 
 ANTES DE LER:
-1. Use listWorkspaceFilesTool para confirmar existência do arquivo
+1. Use a ferramenta nativa "listFiles" para confirmar existência do arquivo
 2. Para PDFs grandes (>50 páginas), use paginação (startPage/endPage)
 
 LEITURA DE PDFs:
@@ -52,6 +68,9 @@ LEITURA DE EXCEL:
 - Especifique sheetName se houver múltiplas abas
 - Use range para limitar células quando necessário
 - Confira sheetNames disponíveis no retorno
+
+LEITURA DE ARQUIVOS TEXTO:
+- Use a ferramenta nativa "readFile" para arquivos .txt, .md, .json
 
 ═══════════════════════════════════════════════════════════════════
 TRATAMENTO DE ERROS
@@ -73,15 +92,16 @@ ORGANIZAÇÃO DE ARQUIVOS
 - workspace/uploads/    → Arquivos de entrada (PDFs, DOCX, Excel)
 - workspace/outputs/    → Arquivos gerados por outros agents
 
-Use createDirectoryTool se precisar garantir que um diretório existe.
+Use a ferramenta nativa "createDirectory" se precisar garantir que um diretório existe.
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
+  workspace,  // ← Workspace nativo fornece WORKSPACE_TOOLS automaticamente
   tools: {
+    // Ferramentas especializadas para formatos específicos
     readPDFTool,
     readDOCXTool,
     readExcelTool,
-    listWorkspaceFilesTool,
-    createDirectoryTool,
+    // NOTA: listFiles, readFile, createDirectory, stat são fornecidos pelo workspace
   },
   memory: new Memory(),
 });

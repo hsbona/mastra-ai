@@ -1,8 +1,12 @@
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { PostgresStore } from '@mastra/pg';
-import { pgVector } from './vector-store';
 import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } from '@mastra/observability';
+
+// Workspace configuration (importado primeiro para evitar dependências circulares)
+import { workspace } from './workspace-config';
+
+import { pgVector } from './vector-store';
 import { documentSummarizeWorkflow } from './workflows/document-summarize-workflow';
 import { documentTranslateWorkflow } from './workflows/document-translate-workflow';
 import { researchAgent } from './agents/shared/research';
@@ -13,9 +17,14 @@ import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
 import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
 import { xpertGovSupervisor } from './agents/xpert-gov';
 import { chatAgent } from './agents/chat-agent';
-import { fileTools } from './tools/file-tools';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
-import { systemTools } from './tools/system-tools';
+
+// ============================================
+// RE-EXPORTS
+// ============================================
+
+// Exportar workspace para uso nos agents
+export { workspace } from './workspace-config';
 
 // ============================================
 // RAG - Sistema de Retrieval-Augmented Generation
@@ -25,10 +34,9 @@ export * from './rag';
 // Exportar RAG tools
 export { queryRAGTool, listIndexesTool } from './tools/rag-tools';
 
-// Exportar tools para uso em agentes
-export { fileTools };
+// Exportar tools especializadas de arquivo (PDF, DOCX, XLSX)
+export { fileTools } from './tools/file-tools';
 export { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool };
-export { systemTools };
 
 // Exportar tools de processamento de documentos
 export { 
@@ -86,6 +94,7 @@ const storage = new PostgresStore({
 // MASTRA INSTANCE
 // ============================================
 export const mastra = new Mastra({
+  workspace,  // ← Workspace nativo para filesystem e sandbox
   workflows: { 
     documentSummarizeWorkflow,
     documentTranslateWorkflow,
