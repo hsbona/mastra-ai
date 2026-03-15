@@ -1,12 +1,19 @@
 /**
- * Document Processing Tools - Arquitetura Simplificada
- * Tools para processamento de documentos grandes com Map-Reduce
+ * Document Processing Tools
+ * 
+ * Ferramentas especializadas para processamento de documentos grandes
+ * com estratégia Map-Reduce: estimativa de tokens, chunking semântico.
+ * 
+ * NOTA: Esta NÃO é uma ferramenta de escrita de arquivos - para isso use:
+ * - workspace.filesystem.writeFile() para TXT/MD/JSON
+ * - writeDOCXTool para documentos Word
+ * - writeExcelTool para planilhas
  */
 
 import { createTool } from '@mastra/core/tools';
 import { z } from 'zod';
-import * as fs from 'fs/promises';
 import * as path from 'path';
+import { workspace } from '../workspace-config';
 import { 
   selectStrategyForModel, 
   calculateSafeChunkSize,
@@ -40,10 +47,10 @@ export function estimateTokens(text: string): number {
 
 /**
  * Seleciona a estratégia de processamento baseada no tamanho
- * AGORA CONSIDERA O MODELO E LIMITE DE CONTEXTO!
+ * CONSIDERA O MODELO E LIMITE DE CONTEXTO!
  * 
  * @param tokenCount - Número estimado de tokens no documento
- * @param modelId - ID do modelo (default: meta-llama/llama-4-scout-17b-16e-instruct)
+ * @param modelId - ID do modelo
  * @param operation - Tipo de operação (afeta overhead)
  * @param glossarySize - Tamanho do glossário (se houver)
  */
@@ -67,7 +74,7 @@ export const estimateTokensTool = createTool({
   description: 'Estima a quantidade de tokens em um texto para decidir estratégia de processamento',
   inputSchema: z.object({
     text: z.string().describe('Texto para estimar tokens'),
-    modelId: z.string().optional().describe('ID do modelo (default: meta-llama/llama-4-scout-17b-16e-instruct)'),
+    modelId: z.string().optional().describe('ID do modelo'),
     operation: z.enum(['summarize', 'translate', 'analyze']).optional().describe('Tipo de operação'),
   }),
   outputSchema: z.object({
@@ -83,10 +90,6 @@ export const estimateTokensTool = createTool({
     text, 
     modelId = DEFAULT_MODEL,
     operation = 'summarize'
-  }: { 
-    text: string; 
-    modelId?: string;
-    operation?: 'summarize' | 'translate' | 'analyze';
   }) => {
     const tokenCount = estimateTokens(text);
     const strategy = selectProcessingStrategy(tokenCount, modelId, operation);
@@ -133,7 +136,7 @@ export async function semanticChunking(
   options: ChunkingOptions = {}
 ): Promise<TextChunk[]> {
   const {
-    chunkSize = 4000, // Será ajustado dinamicamente baseado no modelo
+    chunkSize = 4000,
     overlap = 400,
     preserveParagraphs = true,
   } = options;
@@ -227,11 +230,6 @@ export const semanticChunkingTool = createTool({
     chunkSize = 4000, 
     overlap = 400, 
     preserveParagraphs = true 
-  }: { 
-    text: string; 
-    chunkSize?: number; 
-    overlap?: number; 
-    preserveParagraphs?: boolean;
   }) => {
     
     const chunks = await semanticChunking(text, {
@@ -251,12 +249,19 @@ export const semanticChunkingTool = createTool({
 });
 
 // ============================================
-// STREAMING FILE WRITER
+// WRITE LARGE FILE TOOL (DEPRECATED)
 // ============================================
+// 
+// ⚠️ AVISO: Esta tool foi simplificada para manter compatibilidade.
+// Para novos casos de uso:
+// - TXT/MD: use workspace.filesystem.writeFile() diretamente
+// - DOCX: use writeDOCXTool de file-tools/
+// 
+// A lógica de DOCX foi removida pois duplicava writeDOCXTool.
 
 export const writeLargeFileTool = createTool({
   id: 'write-large-file',
-  description: 'Escreve arquivos grandes em streaming para economizar memória',
+  description: '[DEPRECATED] Use workspace.filesystem.writeFile() para TXT/MD ou writeDOCXTool para DOCX',
   inputSchema: z.object({
     outputPath: z.string().describe('Caminho relativo à pasta workspace/outputs/'),
     content: z.string().describe('Conteúdo completo do arquivo'),
@@ -268,56 +273,30 @@ export const writeLargeFileTool = createTool({
     fileSize: z.number(),
     error: z.string().optional(),
   }),
-  execute: async ({ 
-    outputPath, 
-    content, 
-    fileType 
-  }: { 
-    outputPath: string; 
-    content: string; 
-    fileType: 'txt' | 'md' | 'docx';
-  }) => {
+  execute: async ({ outputPath, content, fileType }) => {
     try {
-      const fullDir = path.resolve('./workspace/outputs', path.dirname(outputPath));
-      await fs.mkdir(fullDir, { recursive: true });
-      
-      const fullPath = path.resolve('./workspace/outputs', outputPath);
+      const basePath = workspace.filesystem.basePath;
+      const fullPath = path.join(basePath, 'outputs', outputPath);
       
       if (fileType === 'txt' || fileType === 'md') {
-        // Para arquivos texto, escrever diretamente
-        await fs.writeFile(fullPath, content, 'utf-8');
-        
-        const stats = await fs.stat(fullPath);
+        // ✅ Usar workspace nativo
+        await workspace.filesystem.writeFile(fullPath, content);
+        const stats = await workspace.filesystem.stat(fullPath);
         
         return {
           success: true,
           filePath: outputPath,
           fileSize: stats.size,
         };
-      } else if (fileType === 'docx') {
-        // Para DOCX, usar a library docx
-        const { Document, Packer, Paragraph, TextRun } = await import('docx');
-        
-        // Dividir conteúdo em parágrafos
-        const paragraphs = content.split('\n\n').map(p => p.trim()).filter(p => p.length > 0);
-        
-        const children = paragraphs.map(text => 
-          new Paragraph({
-            children: [new TextRun({ text })],
-          })
-        );
-        
-        const doc = new Document({
-          sections: [{ children }],
-        });
-        
-        const buffer = await Packer.toBuffer(doc);
-        await fs.writeFile(fullPath, buffer);
-        
+      }
+      
+      if (fileType === 'docx') {
+        // DOCX removido - usar writeDOCXTool
         return {
-          success: true,
-          filePath: outputPath,
-          fileSize: buffer.length,
+          success: false,
+          filePath: '',
+          fileSize: 0,
+          error: 'DOCX não suportado. Use writeDOCXTool de file-tools/',
         };
       }
       
@@ -345,5 +324,5 @@ export const writeLargeFileTool = createTool({
 export const documentProcessingTools = {
   estimateTokensTool,
   semanticChunkingTool,
-  writeLargeFileTool,
+  // writeLargeFileTool está deprecated - use workspace.filesystem.writeFile ou writeDOCXTool
 };

@@ -18,6 +18,7 @@ Guia para agentes de IA trabalhando neste repositório.
 | 7 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
 | 8 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
 | 9 | 📚 **SEMPRE verificar documentação** | APIs mudam constantemente - nunca confie na memória |
+| 10 | 🏗️ **Usar funcionalidades nativas do Mastra** | NUNCA recrie o que o Mastra já fornece (Workspace, tools nativas, etc.) |
 
 ### 🗑️ Exclusão de Arquivos
 ```bash
@@ -25,6 +26,70 @@ Guia para agentes de IA trabalhando neste repositório.
 ✅ trash-put arquivo.txt         # Alternativa - requer instalação
 🚫 rm arquivo.txt                # PROIBIDO
 🚫 rm -rf pasta/                 # PROIBIDO
+```
+
+---
+
+### 🏗️ Funcionalidades Nativas do Mastra (PRIORITÁRIAS)
+
+**NUNCA recrie o que o Mastra já fornece nativamente.**
+
+#### Workspace (CRÍTICO)
+O Mastra fornece `Workspace` com funcionalidades automáticas:
+
+| Funcionalidade | Como usar | O que NÃO fazer |
+|----------------|-----------|-----------------|
+| **Leitura de arquivos** | `workspace.filesystem.readFile()` | ❌ `fs.readFile()` com path hard-coded |
+| **Escrita de arquivos** | `workspace.filesystem.writeFile()` | ❌ `fs.writeFile()` com path hard-coded |
+| **Listar diretórios** | `workspace.filesystem.listFiles()` | ❌ Criar tool própria de listagem |
+| **Criar diretórios** | `workspace.filesystem.createDirectory()` | ❌ Criar tool própria |
+| **Metadados** | `workspace.filesystem.stat()` | ❌ Criar tool própria de info |
+| **Busca em arquivos** | `workspace.filesystem.grep()` | ❌ Implementar busca manual |
+| **Execução de comandos** | `workspace.sandbox.executeCommand()` | ❌ Usar `child_process` diretamente |
+
+#### Exemplo Correto
+```typescript
+// ✅ CERTO: Usar workspace nativo
+import { workspace } from './workspace-config';
+
+const agent = new Agent({
+  id: 'meu-agent',
+  workspace,  // ← Injeta TODAS as ferramentas nativas
+  tools: {
+    // Apenas tools ESPECIALIZADAS (PDF, DOCX, etc.)
+    readPDFTool,
+  },
+});
+
+// Agente pode usar: readFile, writeFile, listFiles, etc. automaticamente
+```
+
+#### Exemplo Incorreto
+```typescript
+// ❌ ERRADO: Recriar funcionalidade nativa
+export const listWorkspaceFilesTool = createTool({...});  // JÁ EXISTE NO WORKSPACE
+export const createDirectoryTool = createTool({...});     // JÁ EXISTE NO WORKSPACE
+export const getFileInfoTool = createTool({...});         // JÁ EXISTE NO WORKSPACE
+```
+
+#### Conceitos e Arquitetura
+Use os conceitos nativos do Mastra em vez de criar soluções paralelas:
+
+| Conceito | Use | Não use |
+|----------|-----|---------|
+| **Armazenamento** | `PostgresStore` do Mastra | ❌ Prisma direto sem necessidade |
+| **Vector Store** | `pgVector` integrado | ❌ Implementação própria de RAG |
+| **Memory** | `Memory` do Mastra | ❌ Gerenciamento manual de contexto |
+| **Observability** | `Observability` do Mastra | ❌ Logs customizados excessivos |
+| **Workflows** | `createWorkflow` + `createStep` | ❌ Orquestração manual |
+
+#### Checklist antes de implementar
+```
+□ A funcionalidade já existe no Mastra?
+□ Verifiquei a documentação em https://mastra.ai/llms.txt?
+□ Consultei a skill /mastra antes de codar?
+□ Estou usando Workspace para operações de filesystem?
+□ Estou usando tools nativas em vez de criar novas?
 ```
 
 ---
