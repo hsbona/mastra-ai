@@ -1,10 +1,15 @@
 // ============================================================
-// PM2 Ecosystem Config - XpertIA Mastra
+// ⚠️  PRODUÇÃO APENAS - NÃO USE EM DESENVOLVIMENTO
 // ============================================================
-// VPS: 24GB RAM | 8 Cores
-// Alocação Mastra: 8GB RAM | 3 cores
+// Este arquivo é para deploy em produção apenas.
+// Em desenvolvimento, use: ./scripts/mastra-studio.sh
 //
-// Uso:
+// Por que não usar em dev?
+// - autorestart: true reinicia o processo automaticamente
+// - Interfere no fluxo de desenvolvimento (start/stop manual)
+// - O modo 'pnpm run dev' já tem hot-reload nativo
+//
+// Uso correto (produção):
 //   cd /root/dev/xpertia/mastra-ai/Xpert && pm2 start ../infra/pm2/ecosystem.config.js
 //   pm2 save
 //   pm2 startup systemd

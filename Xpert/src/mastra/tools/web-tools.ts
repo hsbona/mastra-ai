@@ -31,10 +31,12 @@ export const webSearchTool = createTool({
     try {
       const searchResults = await search(query, {
         safeSearch: SafeSearchType.OFF,
-        maxResults: Math.min(maxResults, 10), // Limit to max 10
       });
+      
+      // Limitar resultados após a busca
+      const limitedResults = searchResults.results.slice(0, Math.min(maxResults, 10));
 
-      const results = searchResults.results.map((result) => ({
+      const results = limitedResults.map((result) => ({
         title: result.title,
         url: result.url,
         snippet: result.description,
@@ -185,7 +187,7 @@ export const summarizeContentTool = createTool({
         bullet: 'Provide a bullet-point summary of key points (5-7 bullets):',
       };
 
-      const prompt = `${stylePrompts[style]}
+      const prompt = `${stylePrompts[style as keyof typeof stylePrompts]}
 
 Content to summarize:
 ${content.slice(0, 15000)}${content.length > 15000 ? '\n\n[Content truncated due to length]' : ''}
@@ -196,7 +198,6 @@ Summary:`;
         model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
         prompt,
         temperature: 0.3,
-        maxTokens: maxLength ? Math.min(Math.ceil(maxLength / 4), 2000) : 1000,
       });
 
       let summary = result.text.trim();
@@ -227,7 +228,7 @@ export const calculateTool = createTool({
   description: 'Evaluate mathematical expressions with optional variables using mathjs',
   inputSchema: z.object({
     expression: z.string().describe('Mathematical expression to evaluate (e.g., "2 + 2", "sqrt(16)", "x * y")'),
-    variables: z.record(z.number()).optional().describe('Optional variables to use in the expression (e.g., {x: 5, y: 10})'),
+    variables: z.record(z.string(), z.number()).optional().describe('Optional variables to use in the expression (e.g., {x: 5, y: 10})'),
   }),
   outputSchema: z.object({
     result: z.union([z.number(), z.string()]),

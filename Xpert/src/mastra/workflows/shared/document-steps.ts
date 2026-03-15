@@ -5,9 +5,9 @@
 
 import { createStep } from '@mastra/core/workflows';
 import { z } from 'zod';
-import { estimateTokens, selectProcessingStrategy, semanticChunking } from '../../tools/document-processing-tools';
+import { estimateTokens, semanticChunking } from '../../tools/document-processing-tools';
 import { readPDFTool, readDOCXTool } from '../../tools/file-tools';
-import { DEFAULT_MODEL, estimateOperationOverhead, getModelConfig } from '../../config/model-config';
+import { DEFAULT_MODEL, estimateOperationOverhead, getModelConfig, selectStrategyForModel } from '../../config/model-config';
 
 // ============================================
 // COMMON SCHEMAS
@@ -144,8 +144,7 @@ export const createAnalyzeStrategyStep = (
     const operation = options.operation || 'summarize';
     const glossarySize = options.glossarySize || 0;
     const overhead = estimateOperationOverhead(operation, glossarySize);
-    
-    const strategy = selectProcessingStrategy(tokenCount, modelId, operation, glossarySize);
+    const strategy = selectStrategyForModel(tokenCount, modelId, overhead);
     const modelConfig = getModelConfig(modelId);
     
     console.log(`[DocumentWorkflow] Arquivo: ${fileName}`);

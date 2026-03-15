@@ -1,29 +1,24 @@
 #!/bin/bash
 # ============================================
-# Xpert - Script de Inicialização do Mastra Studio
+# Xpert - Script de Gerenciamento do Mastra Studio (Desenvolvimento)
 # ============================================
-# Este script gerencia todo o ciclo de vida do Mastra Studio
-# na VPS de desenvolvimento (AlmaLinux 9).
-#
+# Ambiente: VPS de Desenvolvimento (AlmaLinux 9)
 # Uso:
 #   ./scripts/mastra-studio.sh start    # Iniciar Studio
 #   ./scripts/mastra-studio.sh stop     # Parar Studio
-#   ./scripts/mastra-studio.sh restart  # Reiniciar
+#   ./scripts/mastra-studio.sh restart  # Reiniciar Studio
 #   ./scripts/mastra-studio.sh status   # Verificar status
-#   ./scripts/mastra-studio.sh logs     # Ver logs em tempo real
-# ============================================
-# Ambiente: VPS (AlmaLinux 9.7 - 5.189.185.146)
-# PostgreSQL: localhost:5432
+#   ./scripts/mastra-studio.sh logs     # Ver logs
 # ============================================
 
 set -eo pipefail
 
-# Cores para output
+# Cores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 # Diretórios
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,356 +26,178 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 XPERT_DIR="$PROJECT_ROOT/Xpert"
 LOG_FILE="/tmp/mastra-studio.log"
 PID_FILE="/tmp/mastra-studio.pid"
+STUDIO_PORT="4111"
 
-# Configurações do ambiente VPS
-VPS_IP="5.189.185.146"
-PG_HOST="localhost"
-PG_PORT="5432"
-
-# Verificar se está no diretório correto
 cd "$PROJECT_ROOT"
 
 # ============================================
 # Funções Auxiliares
 # ============================================
 
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERRO]${NC} $1"; }
+
+# ============================================
+# Gerenciamento de Processos
+# ============================================
+
+kill_mastra_processes() {
+    log_info "Encerrando processos Mastra..."
+    
+    # Matar processos na porta 4111
+    fuser -k $STUDIO_PORT/tcp 2>/dev/null || true
+    
+    # Matar por padrão
+    pkill -f "mastra/dist/index.js" 2>/dev/null || true
+    pkill -f "pnpm.*mastra" 2>/dev/null || true
+    pkill -f "pnpm run dev" 2>/dev/null || true
+    pkill -f "esbuild" 2>/dev/null || true
+    
+    sleep 2
+    
+    # Forçar se ainda existirem
+    for pattern in "mastra/dist/index.js" "pnpm.*mastra" "pnpm run dev"; do
+        local pids=$(pgrep -f "$pattern" 2>/dev/null || true)
+        for pid in $pids; do
+            kill -9 "$pid" 2>/dev/null || true
+        done
+    done
+    
+    log_success "Processos encerrados"
 }
 
-log_success() {
-    echo -e "${GREEN}[OK]${NC} $1"
-}
-
-log_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERRO]${NC} $1"
+wait_for_port() {
+    local timeout=${1:-10}
+    log_info "Aguardando porta $STUDIO_PORT..."
+    
+    for i in $(seq 1 $timeout); do
+        if ! ss -tlnp 2>/dev/null | grep -q ":$STUDIO_PORT"; then
+            log_success "Porta liberada"
+            return 0
+        fi
+        sleep 1
+    done
+    
+    log_warn "Timeout aguardando porta"
+    return 1
 }
 
 # ============================================
-# Verificação de Dependências
+# Comandos
 # ============================================
 
-check_dependencies() {
-    log_info "Verificando dependências..."
+cmd_start() {
+    echo -e "${GREEN}=== Iniciando Mastra Studio ===${NC}\n"
     
-    # Verificar se Xpert existe
-    if [ ! -d "$XPERT_DIR" ]; then
-        log_error "Diretório Xpert não encontrado em $XPERT_DIR"
-        exit 1
-    fi
-    
-    # Verificar .env
-    if [ ! -f "$XPERT_DIR/.env" ]; then
-        log_error "Arquivo .env não encontrado em $XPERT_DIR/.env"
-        log_info "Certifique-se de que o arquivo .env existe em Xpert/"
-        exit 1
-    fi
-    
-    # Verificar node_modules
+    # Verificar dependências
     if [ ! -d "$XPERT_DIR/node_modules" ]; then
-        log_warn "node_modules não encontrado. Executando pnpm install..."
+        log_warn "node_modules não encontrado. Instalando..."
         (cd "$XPERT_DIR" && pnpm install)
     fi
     
-    # Verificar pnpm
-    if ! command -v pnpm &>/dev/null; then
-        log_error "pnpm não encontrado. Instale com: npm install -g pnpm"
+    # Verificar PostgreSQL
+    if ! timeout 3 bash -c "</dev/tcp/127.0.0.1/5432" 2>/dev/null; then
+        log_error "PostgreSQL não acessível"
         exit 1
     fi
     
-    log_success "Dependências verificadas"
-}
-
-# ============================================
-# Verificação do PostgreSQL
-# ============================================
-
-check_postgres() {
-    log_info "Verificando conexão com PostgreSQL ($PG_HOST:$PG_PORT)..."
-    
-    # Verificar se PostgreSQL está rodando via systemctl
-    local pg_service=""
-    if command -v systemctl &>/dev/null; then
-        for svc in postgresql postgresql-16 postgresql-15 postgresql-14; do
-            if systemctl is-active --quiet "$svc" 2>/dev/null; then
-                pg_service="$svc"
-                break
-            fi
-        done
-        
-        if [ -n "$pg_service" ]; then
-            log_success "PostgreSQL service está ativo ($pg_service)"
-        else
-            log_warn "PostgreSQL service não encontrado ativo"
-            log_info "Tentando iniciar: sudo systemctl start postgresql"
-        fi
+    # Limpar porta se necessário
+    if ss -tlnp 2>/dev/null | grep -q ":$STUDIO_PORT"; then
+        log_warn "Porta $STUDIO_PORT ocupada. Limpando..."
+        kill_mastra_processes
+        wait_for_port 5 || true
     fi
     
-    # Tentar conexão TCP (localhost = 127.0.0.1)
-    if timeout 5 bash -c "</dev/tcp/127.0.0.1/$PG_PORT" 2>/dev/null; then
-        log_success "PostgreSQL acessível em $PG_HOST:$PG_PORT"
-        return 0
-    else
-        log_error "Não foi possível conectar ao PostgreSQL em $PG_HOST:$PG_PORT"
-        log_info "Verifique se o PostgreSQL está rodando:"
-        log_info "  sudo systemctl status postgresql"
-        log_info "  sudo netstat -tlnp | grep 5432"
-        return 1
-    fi
-}
-
-# ============================================
-# Gerenciamento do Mastra Studio
-# ============================================
-
-start_studio() {
-    log_info "Iniciando Mastra Studio..."
-    
-    # Verificar se já está rodando
-    if [ -f "$PID_FILE" ]; then
-        local old_pid
-        old_pid=$(cat "$PID_FILE")
-        if ps -p "$old_pid" > /dev/null 2>&1; then
-            log_warn "Mastra Studio já está rodando (PID: $old_pid)"
-            log_info "Acesse: http://localhost:4111"
-            return 0
-        else
-            rm -f "$PID_FILE"
-        fi
-    fi
-    
-    # Verificar se há processo na porta 4111
-    local existing_pid
-    existing_pid=$(lsof -ti:4111 2>/dev/null || ss -tlnp 2>/dev/null | grep ':4111' | awk '{print $7}' | cut -d',' -f2 | cut -d'=' -f2 || true)
-    if [ -n "$existing_pid" ]; then
-        log_warn "Porta 4111 ocupada (PID: $existing_pid). Encerrando..."
-        kill -TERM "$existing_pid" 2>/dev/null || true
-        sleep 2
-        
-        if ps -p "$existing_pid" > /dev/null 2>&1; then
-            kill -KILL "$existing_pid" 2>/dev/null || true
-            sleep 1
-        fi
-    fi
-    
-    # Limpar log anterior
+    # Limpar logs
     > "$LOG_FILE"
+    rm -f "$PID_FILE"
     
-    # Iniciar Mastra Studio
+    # Iniciar
     cd "$XPERT_DIR"
+    log_info "Iniciando: pnpm run dev"
     nohup pnpm run dev > "$LOG_FILE" 2>&1 &
     echo $! > "$PID_FILE"
     
+    # Aguardar startup
     log_info "Aguardando inicialização..."
-    
-    # Aguardar até 60 segundos pelo startup
-    local started=false
-    for i in {1..60}; do
-        if grep -q "ready in\|Local:\|http://localhost:4111" "$LOG_FILE" 2>/dev/null; then
-            started=true
+    for i in $(seq 1 60); do
+        if grep -q "ready in\|Local:" "$LOG_FILE" 2>/dev/null; then
             break
         fi
-        
-        if ! ps -p "$(cat "$PID_FILE")" > /dev/null 2>&1; then
-            log_error "Processo morreu durante inicialização"
-            break
+        if [ $((i % 10)) -eq 0 ]; then
+            log_info "  Aguardando... (${i}s)"
         fi
-        
         sleep 1
     done
     
     sleep 2
     
-    local http_code
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4111 2>/dev/null || echo "000")
-    
-    if [[ "$http_code" == "200" ]] || [[ "$http_code" == "302" ]] || [[ "$started" == "true" ]]; then
-        log_success "Mastra Studio iniciado com sucesso!"
-        log_info "Studio: http://localhost:4111"
-        log_info "API:    http://localhost:4111/api"
-        log_info "Logs:   tail -f $LOG_FILE"
+    # Verificar
+    local http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$STUDIO_PORT 2>/dev/null || echo "000")
+    if [[ "$http_code" == "200" ]] || [[ "$http_code" == "302" ]]; then
+        log_success "Mastra Studio iniciado!"
         echo ""
-        log_info "Ambiente: VPS ($VPS_IP)"
-        log_info "Use port forwarding no VSCode Remote para acesso externo"
-        return 0
+        echo -e "${BLUE}Studio:${NC} http://localhost:$STUDIO_PORT"
+        echo -e "${BLUE}API:${NC}    http://localhost:$STUDIO_PORT/api"
+        echo -e "${BLUE}Logs:${NC}   tail -f $LOG_FILE"
     else
-        log_error "Falha ao iniciar Mastra Studio (HTTP $http_code)"
-        log_info "Verifique os logs: $LOG_FILE"
-        echo "--- Últimas 30 linhas do log ---"
-        tail -30 "$LOG_FILE" 2>/dev/null || echo "(log vazio)"
+        log_error "Falha ao iniciar (HTTP $http_code)"
+        tail -20 "$LOG_FILE"
         return 1
     fi
 }
 
-stop_studio() {
-    log_info "Parando Mastra Studio..."
+cmd_stop() {
+    echo -e "${YELLOW}=== Parando Mastra Studio ===${NC}\n"
     
-    local killed=false
-    
-    # Parar pelo PID file
+    # Pelo PID file
     if [ -f "$PID_FILE" ]; then
-        local pid
-        pid=$(cat "$PID_FILE")
+        local pid=$(cat "$PID_FILE")
         if ps -p "$pid" > /dev/null 2>&1; then
             kill -TERM "$pid" 2>/dev/null || true
-            
-            for i in {1..5}; do
-                if ! ps -p "$pid" > /dev/null 2>&1; then
-                    log_success "Mastra Studio parado (PID: $pid)"
-                    killed=true
-                    break
-                fi
-                sleep 1
-            done
-            
-            if [[ "$killed" == "false" ]] && ps -p "$pid" > /dev/null 2>&1; then
-                log_warn "Forçando encerramento (SIGKILL)..."
-                kill -KILL "$pid" 2>/dev/null || true
-                sleep 1
-            fi
+            sleep 2
+            kill -9 "$pid" 2>/dev/null || true
         fi
         rm -f "$PID_FILE"
     fi
     
-    # Limpar processos na porta 4111
-    local pids
-    pids=$(lsof -ti:4111 2>/dev/null || true)
-    if [ -n "$pids" ]; then
-        echo "$pids" | while read -r p; do
-            kill -TERM "$p" 2>/dev/null || true
-        done
-        sleep 2
-        
-        pids=$(lsof -ti:4111 2>/dev/null || true)
-        if [ -n "$pids" ]; then
-            echo "$pids" | while read -r p; do
-                kill -KILL "$p" 2>/dev/null || true
-            done
-        fi
-    fi
+    kill_mastra_processes
+    wait_for_port 10 || true
     
-    # Limpar processos pnpm/node órfãos
-    local node_pids
-    node_pids=$(pgrep -f "mastra dev\|pnpm.*dev" 2>/dev/null || true)
-    if [ -n "$node_pids" ]; then
-        echo "$node_pids" | while read -r p; do
-            kill -TERM "$p" 2>/dev/null || true
-        done
-        sleep 1
-    fi
-    
-    if [[ "$killed" == "true" ]] || [[ -z "$(lsof -ti:4111 2>/dev/null)" ]]; then
-        log_success "Mastra Studio parado com sucesso"
-    fi
-}
-
-show_logs() {
-    if [ -f "$LOG_FILE" ]; then
-        log_info "Mostrando logs (Ctrl+C para sair)..."
-        tail -f "$LOG_FILE"
-    else
-        log_error "Arquivo de log não encontrado: $LOG_FILE"
-        exit 1
-    fi
-}
-
-show_status() {
-    echo -e "${GREEN}=== Status do Xpert (VPS) ===${NC}"
-    echo ""
-    echo -e "Ambiente:      ${GREEN}VPS${NC} ($VPS_IP - AlmaLinux 9)"
-    echo ""
-    
-    # Status do PostgreSQL
-    echo -n "PostgreSQL:    "
-    if timeout 2 bash -c "</dev/tcp/127.0.0.1/$PG_PORT" 2>/dev/null; then
-        echo -e "${GREEN}ACESSÍVEL${NC} (localhost:$PG_PORT)"
-    else
-        echo -e "${RED}INACESSÍVEL${NC} (localhost:$PG_PORT)"
-    fi
-    
-    # Status do Mastra
-    echo -n "Mastra Studio: "
-    local http_code
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4111 2>/dev/null || echo "000")
-    
-    if [[ "$http_code" == "200" ]] || [[ "$http_code" == "302" ]]; then
-        echo -e "${GREEN}RODANDO${NC} (http://localhost:4111)"
-    else
-        echo -e "${RED}PARADO${NC}"
-    fi
-    
-    echo ""
-    
-    # PIDs
-    if [ -f "$PID_FILE" ]; then
-        local pid
-        pid=$(cat "$PID_FILE")
-        if ps -p "$pid" > /dev/null 2>&1; then
-            echo -e "PID do Studio: ${GREEN}$pid${NC}"
-        else
-            echo -e "PID do Studio: ${YELLOW}(stale)${NC}"
-            rm -f "$PID_FILE"
-        fi
-    fi
-    
-    # Porta 4111
-    local port_pids
-    port_pids=$(lsof -ti:4111 2>/dev/null || true)
-    if [ -n "$port_pids" ]; then
-        echo -e "Porta 4111:    ${GREEN}Ocupada${NC} (PIDs: $port_pids)"
-    else
-        echo -e "Porta 4111:    ${YELLOW}Livre${NC}"
-    fi
-}
-
-# ============================================
-# Comandos Principais
-# ============================================
-
-cmd_start() {
-    echo -e "${GREEN}=== Iniciando Xpert (VPS) ===${NC}"
-    echo ""
-    
-    check_dependencies
-    echo ""
-    
-    if ! check_postgres; then
-        log_error "Não foi possível conectar ao PostgreSQL"
-        exit 1
-    fi
-    echo ""
-    
-    if start_studio; then
-        echo ""
-        log_success "Xpert está pronto!"
-        echo ""
-        echo -e "${BLUE}Acesse:${NC} http://localhost:4111"
-        echo -e "${YELLOW}Nota:${NC}  Use port forwarding no VSCode Remote"
-        echo -e "${BLUE}Logs:${NC}   ./scripts/mastra-studio.sh logs"
-        echo -e "${BLUE}Parar:${NC}  ./scripts/mastra-studio.sh stop"
-    else
-        exit 1
-    fi
-}
-
-cmd_stop() {
-    echo -e "${YELLOW}=== Parando Xpert (VPS) ===${NC}"
-    echo ""
-    
-    stop_studio
-    echo ""
-    
-    log_success "Xpert parado"
+    rm -f "$LOG_FILE"
+    log_success "Mastra Studio parado"
 }
 
 cmd_restart() {
+    echo -e "${YELLOW}=== Reiniciando Mastra Studio ===${NC}\n"
     cmd_stop
     sleep 2
     cmd_start
+}
+
+cmd_status() {
+    echo -e "${GREEN}=== Status ===${NC}\n"
+    
+    echo -n "PostgreSQL:    "
+    timeout 2 bash -c "</dev/tcp/127.0.0.1/5432" 2>/dev/null && echo -e "${GREEN}OK${NC}" || echo -e "${RED}OFF${NC}"
+    
+    echo -n "Mastra Studio: "
+    local http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$STUDIO_PORT 2>/dev/null || echo "000")
+    [[ "$http_code" == "200" ]] && echo -e "${GREEN}ON${NC} (http://localhost:$STUDIO_PORT)" || echo -e "${RED}OFF${NC}"
+    
+    echo -n "Porta $STUDIO_PORT:    "
+    ss -tlnp 2>/dev/null | grep -q ":$STUDIO_PORT" && echo -e "${GREEN}Ocupada${NC}" || echo -e "${YELLOW}Livre${NC}"
+}
+
+cmd_logs() {
+    if [ -f "$LOG_FILE" ]; then
+        tail -f "$LOG_FILE"
+    else
+        log_error "Log não encontrado"
+        exit 1
+    fi
 }
 
 # ============================================
@@ -388,32 +205,20 @@ cmd_restart() {
 # ============================================
 
 case "${1:-status}" in
-    start)
-        cmd_start
-        ;;
-    stop)
-        cmd_stop
-        ;;
-    restart)
-        cmd_restart
-        ;;
-    status)
-        show_status
-        ;;
-    logs)
-        show_logs
-        ;;
+    start) cmd_start ;;
+    stop) cmd_stop ;;
+    restart) cmd_restart ;;
+    status) cmd_status ;;
+    logs) cmd_logs ;;
     *)
         echo "Uso: $0 {start|stop|restart|status|logs}"
         echo ""
         echo "Comandos:"
         echo "  start   - Inicia Mastra Studio"
         echo "  stop    - Para Mastra Studio"
-        echo "  restart - Reinicia o Studio"
-        echo "  status  - Mostra status de todos os serviços"
-        echo "  logs    - Acompanha logs em tempo real"
-        echo ""
-        echo "Ambiente: VPS $VPS_IP (AlmaLinux 9)"
+        echo "  restart - Reinicia o Studio (use após alterar código)"
+        echo "  status  - Mostra status"
+        echo "  logs    - Acompanha logs"
         exit 1
         ;;
 esac

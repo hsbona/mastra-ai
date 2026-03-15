@@ -30,7 +30,8 @@ import {
 export const docProcessorAgent = new Agent({
   id: 'doc-processor',
   name: 'Document Processor Agent',
-  description: 'Processa documentos PDF, DOCX, Excel. Extrai dados, converte formatos e gera arquivos. Use para: ler arquivos, extrair dados, criar documentos, converter formatos.',
+  // Descrição otimizada para o Supervisor
+  description: 'Especialista em leitura e escrita de arquivos. Processa PDFs, DOCX, Excel e TXT. Extrai conteúdo, converte formatos e cria documentos estruturados. Use para: ler arquivos do usuário, extrair dados de planilhas, converter documentos. NÃO analisa dados estatísticos e NÃO redige documentos oficiais.',
   instructions: `
 Você é um agente especializado em processamento de arquivos e documentos.
 

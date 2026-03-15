@@ -1,112 +1,45 @@
 /**
- * Document Processing Tools - Arquitetura Simplificada
- * Tools para processamento de documentos grandes com Map-Reduce
+ * Document Processing Tools
+ * 
+ * Ferramentas especializadas para processamento de documentos grandes
+ * com estratégia Map-Reduce.
+ * 
+ * NOTA: Para escrita de arquivos, use:
+ * - workspace.filesystem.writeFile() para TXT/MD/JSON
+ * - writeDOCXTool para documentos Word
+ * - writeExcelTool para planilhas
  */
 
 import { createTool } from '@mastra/core/tools';
+import { MDocument } from '@mastra/rag';
 import { z } from 'zod';
-import * as fs from 'fs/promises';
 import * as path from 'path';
+import { workspace } from '../workspace-config';
 import { 
   selectStrategyForModel, 
   calculateSafeChunkSize,
-  estimateOperationOverhead,
   getModelConfig,
   DEFAULT_MODEL 
 } from '../config/model-config';
 
 // ============================================
-// TOKEN ESTIMATION
+// TOKEN ESTIMATION (Aproximação eficiente)
 // ============================================
 
 /**
  * Estima a quantidade de tokens em um texto
  * Regra aproximada: 1 token ≈ 4 caracteres para inglês/português
- * ou 1 token ≈ 0.75 palavras
+ * 
+ * NOTA: Para tokenização precisa, use MDocument.chunkToken() do @mastra/rag
+ * Esta função é uma aproximação rápida para decisões de estratégia.
  */
 export function estimateTokens(text: string): number {
   if (!text || text.length === 0) return 0;
-  
-  // Método 1: Baseado em caracteres (mais conservador)
-  const charBased = Math.ceil(text.length / 4);
-  
-  // Método 2: Baseado em palavras
-  const words = text.trim().split(/\s+/).filter(w => w.length > 0);
-  const wordBased = Math.ceil(words.length / 0.75);
-  
-  // Retorna o maior para ser conservador
-  return Math.max(charBased, wordBased);
+  return Math.ceil(text.length / 4);
 }
-
-/**
- * Seleciona a estratégia de processamento baseada no tamanho
- * AGORA CONSIDERA O MODELO E LIMITE DE CONTEXTO!
- * 
- * @param tokenCount - Número estimado de tokens no documento
- * @param modelId - ID do modelo (default: meta-llama/llama-4-scout-17b-16e-instruct)
- * @param operation - Tipo de operação (afeta overhead)
- * @param glossarySize - Tamanho do glossário (se houver)
- */
-export function selectProcessingStrategy(
-  tokenCount: number,
-  modelId: string = DEFAULT_MODEL,
-  operation: 'summarize' | 'translate' | 'analyze' = 'summarize',
-  glossarySize: number = 0
-): {
-  strategy: 'direct' | 'map-reduce' | 'hierarchical';
-  chunkSize: number;
-  overlap: number;
-  description: string;
-} {
-  const overhead = estimateOperationOverhead(operation, glossarySize);
-  return selectStrategyForModel(tokenCount, modelId, overhead);
-}
-
-export const estimateTokensTool = createTool({
-  id: 'estimate-tokens',
-  description: 'Estima a quantidade de tokens em um texto para decidir estratégia de processamento',
-  inputSchema: z.object({
-    text: z.string().describe('Texto para estimar tokens'),
-    modelId: z.string().optional().describe('ID do modelo (default: meta-llama/llama-4-scout-17b-16e-instruct)'),
-    operation: z.enum(['summarize', 'translate', 'analyze']).optional().describe('Tipo de operação'),
-  }),
-  outputSchema: z.object({
-    tokenCount: z.number(),
-    strategy: z.enum(['direct', 'map-reduce', 'hierarchical']),
-    chunkSize: z.number(),
-    overlap: z.number(),
-    description: z.string(),
-    modelContextWindow: z.number(),
-    safeChunkSize: z.number(),
-  }),
-  execute: async ({ 
-    text, 
-    modelId = DEFAULT_MODEL,
-    operation = 'summarize'
-  }: { 
-    text: string; 
-    modelId?: string;
-    operation?: 'summarize' | 'translate' | 'analyze';
-  }) => {
-    const tokenCount = estimateTokens(text);
-    const strategy = selectProcessingStrategy(tokenCount, modelId, operation);
-    const safeChunkSize = calculateSafeChunkSize(modelId);
-    const modelConfig = getModelConfig(modelId);
-    
-    return {
-      tokenCount,
-      strategy: strategy.strategy,
-      chunkSize: strategy.chunkSize,
-      overlap: strategy.overlap,
-      description: strategy.description,
-      modelContextWindow: modelConfig.contextWindow,
-      safeChunkSize,
-    };
-  },
-});
 
 // ============================================
-// SEMANTIC CHUNKING
+// SEMANTIC CHUNKING (usando MDocument nativo)
 // ============================================
 
 export interface ChunkingOptions {
@@ -125,90 +58,51 @@ export interface TextChunk {
 }
 
 /**
- * Divide texto em chunks semânticos preservando parágrafos
- * Usa abordagem simples baseada em parágrafos
+ * Divide texto em chunks semânticos usando MDocument do Mastra RAG
+ * 
+ * Usa estratégia 'recursive' que preserva estrutura de parágrafos
+ * e mantém contexto através de overlap configurável.
  */
 export async function semanticChunking(
   text: string,
   options: ChunkingOptions = {}
 ): Promise<TextChunk[]> {
   const {
-    chunkSize = 4000, // Será ajustado dinamicamente baseado no modelo
+    chunkSize = 4000,
     overlap = 400,
-    preserveParagraphs = true,
   } = options;
 
-  const chunks: TextChunk[] = [];
+  // Criar documento Mastra RAG
+  const doc = MDocument.fromText(text);
   
-  if (preserveParagraphs) {
-    // Dividir por parágrafos primeiro
-    const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-    
-    let currentChunk = '';
-    let chunkIndex = 0;
-    
-    for (const paragraph of paragraphs) {
-      // Se adicionar este parágrafo ultrapassa o tamanho, salvar chunk atual
-      if (currentChunk.length + paragraph.length > chunkSize && currentChunk.length > 0) {
-        chunks.push({
-          content: currentChunk.trim(),
-          index: chunkIndex++,
-          metadata: {
-            wordCount: currentChunk.split(/\s+/).filter(w => w.length > 0).length,
-            estimatedTokens: estimateTokens(currentChunk),
-          },
-        });
-        
-        // Overlap: manter parte do chunk anterior
-        if (overlap > 0 && currentChunk.length > overlap) {
-          const overlapText = currentChunk.slice(-overlap);
-          currentChunk = overlapText + '\n\n' + paragraph;
-        } else {
-          currentChunk = paragraph;
-        }
-      } else {
-        // Adicionar parágrafo ao chunk atual
-        currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
-      }
-    }
-    
-    // Adicionar último chunk se não estiver vazio
-    if (currentChunk.trim().length > 0) {
-      chunks.push({
-        content: currentChunk.trim(),
-        index: chunkIndex,
-        metadata: {
-          wordCount: currentChunk.split(/\s+/).filter(w => w.length > 0).length,
-          estimatedTokens: estimateTokens(currentChunk),
-        },
-      });
-    }
-  } else {
-    // Chunking simples por caracteres
-    for (let i = 0; i < text.length; i += (chunkSize - overlap)) {
-      const chunk = text.slice(i, i + chunkSize);
-      chunks.push({
-        content: chunk,
-        index: chunks.length,
-        metadata: {
-          wordCount: chunk.split(/\s+/).filter(w => w.length > 0).length,
-          estimatedTokens: estimateTokens(chunk),
-        },
-      });
-    }
-  }
+  // Chunking recursivo (preserva estrutura de parágrafos)
+  await doc.chunkRecursive({
+    maxSize: chunkSize,
+    overlap,
+    separators: ['\n\n', '\n', '. ', '! ', '? ', ' '],
+  });
   
-  return chunks;
+  // Obter chunks processados
+  const chunks = doc.getDocs();
+  
+  // Mapear para o formato TextChunk
+  return chunks.map((chunk, index) => ({
+    content: chunk.text,
+    index,
+    metadata: {
+      wordCount: chunk.text.split(/\s+/).filter(w => w.length > 0).length,
+      estimatedTokens: estimateTokens(chunk.text),
+    },
+  }));
 }
 
 export const semanticChunkingTool = createTool({
   id: 'semantic-chunking',
-  description: 'Divide texto em chunks semânticos preservando parágrafos',
+  description: 'Divide texto em chunks semânticos preservando parágrafos (usa MDocument do Mastra RAG)',
   inputSchema: z.object({
     text: z.string().describe('Texto para dividir em chunks'),
-    chunkSize: z.number().optional().describe('Tamanho aproximado de cada chunk (caracteres)'),
-    overlap: z.number().optional().describe('Sobreposição entre chunks (caracteres)'),
-    preserveParagraphs: z.boolean().optional().describe('Preservar fronteiras de parágrafos'),
+    chunkSize: z.number().optional().describe('Tamanho aproximado de cada chunk (caracteres, default: 4000)'),
+    overlap: z.number().optional().describe('Sobreposição entre chunks (caracteres, default: 400)'),
   }),
   outputSchema: z.object({
     chunks: z.array(z.object({
@@ -226,18 +120,10 @@ export const semanticChunkingTool = createTool({
     text, 
     chunkSize = 4000, 
     overlap = 400, 
-    preserveParagraphs = true 
-  }: { 
-    text: string; 
-    chunkSize?: number; 
-    overlap?: number; 
-    preserveParagraphs?: boolean;
   }) => {
-    
     const chunks = await semanticChunking(text, {
       chunkSize,
       overlap,
-      preserveParagraphs,
     });
 
     const totalTokens = chunks.reduce((sum, c) => sum + c.metadata.estimatedTokens, 0);
@@ -251,12 +137,82 @@ export const semanticChunkingTool = createTool({
 });
 
 // ============================================
-// STREAMING FILE WRITER
+// TOKEN ESTIMATION TOOL
 // ============================================
+
+export const estimateTokensTool = createTool({
+  id: 'estimate-tokens',
+  description: 'Estima tokens e sugere estratégia de processamento baseada no modelo',
+  inputSchema: z.object({
+    text: z.string().describe('Texto para estimar tokens'),
+    modelId: z.string().optional().describe('ID do modelo (default: Llama 4 Scout)'),
+    operation: z.enum(['summarize', 'translate', 'analyze']).optional().describe('Tipo de operação'),
+  }),
+  outputSchema: z.object({
+    tokenCount: z.number(),
+    strategy: z.enum(['direct', 'map-reduce', 'hierarchical']),
+    chunkSize: z.number(),
+    overlap: z.number(),
+    description: z.string(),
+    modelContextWindow: z.number(),
+    safeChunkSize: z.number(),
+  }),
+  execute: async ({ 
+    text, 
+    modelId = DEFAULT_MODEL,
+    operation = 'summarize'
+  }) => {
+    const tokenCount = estimateTokens(text);
+    const safeChunkSize = calculateSafeChunkSize(modelId);
+    const modelConfig = getModelConfig(modelId);
+    
+    // Determinar estratégia baseada no tamanho
+    let strategy: 'direct' | 'map-reduce' | 'hierarchical';
+    let chunkSize = safeChunkSize;
+    let overlap = Math.floor(safeChunkSize * 0.1);
+    let description: string;
+    
+    const maxDirectTokens = Math.floor(safeChunkSize * 0.9);
+    
+    if (tokenCount <= maxDirectTokens) {
+      strategy = 'direct';
+      chunkSize = tokenCount;
+      overlap = 0;
+      description = `Processamento direto (documento pequeno, <= ${maxDirectTokens} tokens)`;
+    } else if (tokenCount < 50000) {
+      strategy = 'map-reduce';
+      description = `Map-Reduce paralelo (${modelConfig.name}, chunks de ${safeChunkSize} tokens)`;
+    } else {
+      chunkSize = Math.floor(safeChunkSize * 0.85);
+      overlap = Math.floor(chunkSize * 0.1);
+      strategy = 'hierarchical';
+      description = `Map-Reduce hierárquico (documento grande, chunks de ${chunkSize} tokens)`;
+    }
+    
+    return {
+      tokenCount,
+      strategy,
+      chunkSize,
+      overlap,
+      description,
+      modelContextWindow: modelConfig.contextWindow,
+      safeChunkSize,
+    };
+  },
+});
+
+// ============================================
+// WRITE LARGE FILE TOOL (DEPRECATED)
+// ============================================
+// 
+// ⚠️ AVISO: Esta tool foi simplificada para manter compatibilidade.
+// Para novos casos de uso:
+// - TXT/MD: use workspace.filesystem.writeFile() diretamente
+// - DOCX: use writeDOCXTool de file-tools/
 
 export const writeLargeFileTool = createTool({
   id: 'write-large-file',
-  description: 'Escreve arquivos grandes em streaming para economizar memória',
+  description: '[DEPRECATED] Use workspace.filesystem.writeFile() para TXT/MD ou writeDOCXTool para DOCX',
   inputSchema: z.object({
     outputPath: z.string().describe('Caminho relativo à pasta workspace/outputs/'),
     content: z.string().describe('Conteúdo completo do arquivo'),
@@ -268,56 +224,30 @@ export const writeLargeFileTool = createTool({
     fileSize: z.number(),
     error: z.string().optional(),
   }),
-  execute: async ({ 
-    outputPath, 
-    content, 
-    fileType 
-  }: { 
-    outputPath: string; 
-    content: string; 
-    fileType: 'txt' | 'md' | 'docx';
-  }) => {
+  execute: async ({ outputPath, content, fileType }) => {
     try {
-      const fullDir = path.resolve('./workspace/outputs', path.dirname(outputPath));
-      await fs.mkdir(fullDir, { recursive: true });
-      
-      const fullPath = path.resolve('./workspace/outputs', outputPath);
+      const basePath = workspace.filesystem.basePath;
+      const fullPath = path.join(basePath, 'outputs', outputPath);
       
       if (fileType === 'txt' || fileType === 'md') {
-        // Para arquivos texto, escrever diretamente
-        await fs.writeFile(fullPath, content, 'utf-8');
-        
-        const stats = await fs.stat(fullPath);
+        // ✅ Usar workspace nativo
+        await workspace.filesystem.writeFile(fullPath, content);
+        const stats = await workspace.filesystem.stat(fullPath);
         
         return {
           success: true,
           filePath: outputPath,
           fileSize: stats.size,
         };
-      } else if (fileType === 'docx') {
-        // Para DOCX, usar a library docx
-        const { Document, Packer, Paragraph, TextRun } = await import('docx');
-        
-        // Dividir conteúdo em parágrafos
-        const paragraphs = content.split('\n\n').map(p => p.trim()).filter(p => p.length > 0);
-        
-        const children = paragraphs.map(text => 
-          new Paragraph({
-            children: [new TextRun({ text })],
-          })
-        );
-        
-        const doc = new Document({
-          sections: [{ children }],
-        });
-        
-        const buffer = await Packer.toBuffer(doc);
-        await fs.writeFile(fullPath, buffer);
-        
+      }
+      
+      if (fileType === 'docx') {
+        // DOCX removido - usar writeDOCXTool
         return {
-          success: true,
-          filePath: outputPath,
-          fileSize: buffer.length,
+          success: false,
+          filePath: '',
+          fileSize: 0,
+          error: 'DOCX não suportado. Use writeDOCXTool de file-tools/',
         };
       }
       
@@ -345,5 +275,5 @@ export const writeLargeFileTool = createTool({
 export const documentProcessingTools = {
   estimateTokensTool,
   semanticChunkingTool,
-  writeLargeFileTool,
+  // writeLargeFileTool está deprecated
 };

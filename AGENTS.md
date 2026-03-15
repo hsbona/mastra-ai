@@ -6,31 +6,45 @@ Guia para agentes de IA trabalhando neste repositório.
 
 ## ⚠️ REGRAS CRÍTICAS
 
-> 🥇 **REGRA DE OURO:** Toda tarefa deve ser executada usando **agents swarm**, com o **máximo de agents em paralelo possível**.
-
 | # | Regra | Ação |
 |---|-------|------|
-| 1 | 🐝 **Agents Swarm obrigatório** | Use múltiplos agents em paralelo para todas as tarefas sempre que possível |
-| 2 | 🧠 **Carregar skill do Mastra primeiro** | Use `/mastra` antes de qualquer código |
-| 3 | 🗑️ **Exclusão sempre via lixeira** | `trash-put` ou `gio trash` (nunca `rm`) |
-| 4 | ⚙️ **Gerenciar serviços apenas via script** | Use `./scripts/mastra-studio.sh` — nunca `kill`/`pkill` |
-| 5 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação explícita |
-| 5a| 🚫 **NUNCA usar esquema 'xpertia'** | Esquema legado protegido - contém dados de produção |
-| 6 | 🚫 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
-| 7 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
-| 8 | 🏗️ **`infra/` é sagrado** | Todas as definições de ambiente DEVEM estar em `infra/` |
-| 9 | 📝 **Documente mudanças em `infra/`** | Sempre atualize `infra/` quando alterar o ambiente |
-| 10 | 🔒 **Autorização obrigatória** | Mudanças na infraestrutura PRECISAM de autorização **EXPLÍCITA** |
+| 1 | 🐝 **Agents Swarm obrigatório** | Use múltiplos agents em paralelo para tarefas complexas |
+| 2 | 🧠 **Carregar skill `/mastra` primeiro** | Use antes de qualquer código |
+| 3 | 🗑️ **Exclusão sempre via lixeira** | `gio trash` ou `trash-put` — **nunca `rm -rf`** |
+| 4 | ⚙️ **Gerenciar serviços via script** | Use `./scripts/mastra-studio.sh` — nunca `kill`/`pkill` |
+| 5 | 🔄 **Reiniciar para aplicar mudanças** | Execute `./scripts/mastra-studio.sh restart` após alterar código |
+| 6 | 🗄️ **Nunca alterar banco sem autorização** | Migrations proibidas sem confirmação |
+| 7 | 🚫 **NUNCA usar esquema 'xpertia'** | Esquema legado protegido |
+| 8 | 🔐 **Sem valores hard-coded** | Use `.env` e arquivos de configuração |
+| 9 | 📁 **Ignorar `.archive`** | Nunca processar arquivos desta pasta |
+| 10 | 📚 **SEMPRE verificar documentação** | APIs mudam — use `/mastra` |
+| 11 | 🏗️ **Usar funcionalidades nativas do Mastra** | NUNCA recrie o que já existe (Workspace, tools nativas) |
 
-### 🗑️ Exclusão de Arquivos
-```bash
-✅ trash-put arquivo.txt    gio trash arquivo.txt
-🚫 rm arquivo.txt           rm -rf pasta/
+---
+
+### 🏗️ Funcionalidades Nativas do Mastra
+
+**NUNCA recrie o que o Mastra já fornece.**
+
+#### Workspace
+
+| Funcionalidade | Como usar | O que NÃO fazer |
+|----------------|-----------|-----------------|
+| **Leitura/Escrita** | `workspace.filesystem.readFile()` / `writeFile()` | ❌ `fs` com paths hard-coded |
+| **Listar/Criar diretórios** | `workspace.filesystem.listFiles()` / `createDirectory()` | ❌ Tools próprias |
+| **Busca** | `workspace.filesystem.grep()` | ❌ Busca manual |
+| **Comandos** | `workspace.sandbox.executeCommand()` | ❌ `child_process` direto |
+
+#### Checklist antes de implementar
+```
+□ A funcionalidade já existe no Mastra?
+□ Consultou a skill `/mastra`?
+□ Está usando Workspace para filesystem?
 ```
 
 ---
 
-## 🚀 Execução Automática (Yolo)
+## 🚀 Modo Yolo
 
 Execute sem confirmar: `pnpm install`, `pnpm dev`, `git add/commit/push`
 
@@ -38,18 +52,63 @@ Execute sem confirmar: `pnpm install`, `pnpm dev`, `git add/commit/push`
 
 ---
 
-## Visão Geral do Projeto
+## Visão Geral
 
-Projeto **Xpert** — aplicação **Mastra** (TypeScript) para aplicações com IA.
+Projeto **Xpert** — aplicação Mastra (TypeScript) na pasta `Xpert/`.
 
-> 📁 **Localização:** O projeto está na pasta `Xpert/`, não na raiz do repositório.
+> 📁 **Localização:** Código em `Xpert/src/mastra/`
 
-Consumido **exclusivamente via Mastra Studio** — não implemente interface de usuário.
+Consumido **exclusivamente via Mastra Studio** — sem UI.
 
 | ✅ No Escopo | ❌ Fora do Escopo |
 |--------------|-------------------|
-| Agents, Workflows, Tools | UI/frontend web/mobile |
+| Agents, Workflows, Tools | UI/frontend |
 | APIs e endpoints | Interfaces visuais |
+
+---
+
+## 📚 Documentação Mastra
+
+**⚠️ APIs mudam constantemente — nunca confie na memória.**
+
+### Como usar a Skill `/mastra`
+
+A skill `/mastra` fornece acesso à documentação atualizada via Context7 MCP.
+
+**Workflow:**
+```
+1. Digite "/mastra" no início da conversa
+2. Pergunte sobre a API/pattern necessário
+3. A skill buscará na melhor fonte disponível
+```
+
+### Estratégia de Lookup (Fallback)
+
+```
+Context7 MCP (via skill /mastra)
+         ↓ (indisponível)
+Embedded Docs: Xpert/node_modules/@mastra/core/dist/docs/
+         ↓ (não instalado)
+Remote Docs: https://mastra.ai/llms.txt
+```
+
+### Comandos Úteis
+
+```bash
+# Buscar na documentação local
+grep -r "class Agent" Xpert/node_modules/@mastra/core/dist/docs/
+
+# Documentação remota
+curl -s https://mastra.ai/llms.txt | head -100
+```
+
+### Erros Comuns
+
+| Erro | Significado | Ação |
+|------|-------------|------|
+| `Property X does not exist` | API mudou | Consultar `/mastra` |
+| `Cannot find module` | Path de import mudou | Verificar documentação |
+| Constructor errors | Assinatura mudou | Checar type definitions |
 
 ---
 
@@ -61,212 +120,62 @@ Consumido **exclusivamente via Mastra Studio** — não implemente interface de 
 | pnpm | 10.30.3 |
 | TypeScript | 5.9.3 |
 | Mastra Core | ^1.12.0 |
-| Modelo | groq/llama-3.3-70b-versatile |
+| Modelo Padrão | meta-llama/llama-4-scout-17b-16e-instruct |
 
 ---
 
-## Estrutura de Pastas
-
-O código-fonte do Mastra está dentro de `Xpert/`:
+## Estrutura
 
 ```
 Xpert/
-src/mastra/
-├── index.ts       # Ponto de entrada
-├── agents/        # Definição de agents
-├── workflows/     # Fluxos de trabalho multi-etapa
-├── tools/         # Ferramentas reutilizáveis
-├── mcp/           # (opcional) Servidores MCP
-└── public/        # (opcional) Recursos estáticos
+├── src/mastra/
+│   ├── index.ts          # Registra agents/workflows
+│   ├── agents/           # Definição de agents
+│   ├── workflows/        # Fluxos de trabalho
+│   └── tools/            # Ferramentas
+├── .env                  # Variáveis (não commitar)
+└── package.json
 ```
 
 ---
 
 ## Comandos
 
+### Mastra Studio
+
 ```bash
-# Desenvolvimento (inicia Mastra Studio em localhost:4111)
-cd Xpert && ../scripts/mastra-studio.sh start   # Inicia Studio
-../scripts/mastra-studio.sh status  # Verifica status
-../scripts/mastra-studio.sh stop    # Para Studio
-../scripts/mastra-studio.sh logs    # Logs em tempo real
-
-> 📝 **Arquivo de log:** `/tmp/mastra-studio.log`
-
-# Build e produção (execute de dentro de Xpert/)
-pnpm run build
-pnpm run start
+./scripts/mastra-studio.sh start     # Iniciar
+./scripts/mastra-studio.sh stop      # Parar
+./scripts/mastra-studio.sh restart   # Reiniciar (após alterações)
+./scripts/mastra-studio.sh status    # Status
+./scripts/mastra-studio.sh logs      # Logs
 ```
+
+> 📝 **Log:** `/tmp/mastra-studio.log`
+
+**Fluxo após alterações:**
+1. Altere o código em `Xpert/src/mastra/`
+2. Execute `./scripts/mastra-studio.sh restart`
+3. Acesse http://localhost:4111
 
 ---
 
-## 🖥️ Ambiente de Desenvolvimento
-
-> **IMPORTANTE:** O desenvolvimento é feito **DIRETAMENTE na VPS** via VSCode Remote SSH.
-
-### VPS de Desenvolvimento
+## Ambiente de Desenvolvimento
 
 | Configuração | Valor |
 |--------------|-------|
-| **SO** | AlmaLinux 9.7 (Moss Jungle Cat) |
-| **Tipo** | VPS sem interface gráfica (headless) |
+| **SO** | AlmaLinux 9.7 |
 | **IP** | `5.189.185.146` |
-| **Acesso** | SSH / VSCode Remote |
+| **Acesso** | VSCode Remote SSH |
 | **Repositório** | `/root/dev/xpertia/mastra-ai` |
-| **PostgreSQL** | localhost:5432 (mesma máquina) |
+| **PostgreSQL** | localhost:5432 |
 
-### Conexão SSH
-
-```bash
-# Comando direto
-ssh -i .key/root_key root@5.189.185.146
-
-# Ou usando configuração do SSH (~/.ssh/config)
-Host spark-dev
-    HostName 5.189.185.146
-    User root
-    IdentityFile ~/.ssh/root_key
-    
-# Conectar com:
-ssh spark-dev
-```
-
-> ⚠️ **Atenção:** Nunca faça commit da chave SSH `.key/root_key`. O arquivo já está no `.gitignore`.
-
-### VSCode Remote
-
-1. **Local:** VSCode com extensão "Remote - SSH"
-2. **Remote:** VPS AlmaLinux 9 (este servidor)
-3. **Caminho:** `/root/dev/xpertia/mastra-ai`
-
-### Port Forwarding (Automático)
-
-Ao usar VSCode Remote, o port forwarding é automático:
-
-| Porta Local | Porta Remota | Serviço |
-|-------------|--------------|---------|
-| `localhost:4111` | `localhost:4111` | Mastra Studio |
-
-> 💡 O VSCode detecta automaticamente processos escutando em portas e oferece abrir no navegador local.
-
-### 🚫 Sem Interface Gráfica
-
-- Esta VPS **não possui** ambiente desktop (GNOME, KDE, XFCE, etc.)
-- **NÃO instalar** navegadores (Chromium, Firefox, Chrome), editores gráficos, ou qualquer software GUI
-- **NÃO instalar** pacotes que dependam de X11/Wayland
-- Use apenas ferramentas CLI (linha de comando)
-
----
-
-### PostgreSQL (Local na VPS)
-
-O PostgreSQL roda **localmente na mesma VPS** do desenvolvimento:
+**Port Forwarding:** `localhost:4111` → Mastra Studio
 
 ```bash
-# Verificar status
+# PostgreSQL
 sudo systemctl status postgresql
-
-# Conectar ao banco
 sudo -u postgres psql -d xpertia
-
-# Ver logs
-sudo journalctl -u postgresql -f
-```
-
-- Host: `localhost` (127.0.0.1)
-- Porta: `5432`
-- DATABASE_URL aponta para localhost
-- **NÃO** é necessário túnel SSH ou conexão remota
-
-### 🗄️ Banco de Dados — PROIBIDO SEM AUTORIZAÇÃO
-
-- Criar/alterar/remover: colunas, tabelas, índices
-- Executar migrations ou sincronização de schema
-- **Detectou inconsistência?** → PARE e aguarde autorização
-
-### Armazenamento e Memória
-
-- **Storage**: `PostgresStore` (PostgreSQL + pgvector)
-- **Memory**: `@mastra/memory` com PostgreSQL
-- **Vector Store**: `PgVector` para embeddings
-- **Observability**: Traces no PostgreSQL (visualizáveis no Mastra Studio)
-
----
-
-## 🏗️ Infraestrutura como Código (`infra/`)
-
-### O que é `infra/`
-
-O diretório `infra/` contém as **definições oficiais** de toda a infraestrutura do projeto. Ele está **versionado no git** na raiz do repositório:
-
-```
-/root/dev/xpertia/mastra-ai/
-├── infra/              # ← INFRAESTRUTURA VERSIONADA
-│   ├── docker/
-│   ├── pm2/
-│   ├── postgreSQL/
-│   └── README.md
-├── Xpert/              # ← Código da aplicação
-├── docs/
-└── scripts/
-```
-
-| Diretório | Conteúdo |
-|-----------|----------|
-| `infra/postgreSQL/` | Scripts SQL para recriar o banco de dados |
-| `infra/docker/` | Configurações Docker (DEV e PROD) |
-| `infra/pm2/` | Configuração PM2 para Mastra |
-
-### 📝 Regras de Ouro
-
-1. **📁 Este é o local oficial**: Todas as definições de modificações no ambiente DEVEM estar em `infra/`
-2. **🔄 Sempre atualize**: Quando houver mudança no ambiente, atualize os arquivos em `infra/`
-3. **🔒 Autorização obrigatória**: Mudanças na infraestrutura PRECISAM ser **EXPLICITAMENTE autorizadas**
-
-### ⚠️ Regra Crítica: Sincronização Infra ↔ VPS
-
-**SEMPRE** que fizer qualquer alteração diretamente na VPS (banco de dados, Docker, PM2), você **DEVE** atualizar os arquivos correspondentes em `infra/`:
-
-```
-❌ Fluxo INCORRETO:
-   1. Altera config no PostgreSQL na VPS
-   2. Esquece de atualizar infra/postgreSQL/
-   3. Perde a mudança quando recriar o ambiente
-
-✅ Fluxo CORRETO:
-   1. Altera config no PostgreSQL na VPS
-   2. Atualiza infra/postgreSQL/ com a mesma mudança
-   3. Commit: git add infra/ && git commit -m "infra: ajusta ..."
-   4. Ambiente pode ser recriado idêntico
-```
-
-**Checklist mental:**
-- Mudei algo no banco? → Atualize `infra/postgreSQL/`
-- Mudei config do Docker? → Atualize `infra/docker/`
-- Mudei config do PM2? → Atualize `infra/pm2/`
-
-### ❌ PROIBIDO sem autorização explícita:
-
-- Executar scripts SQL que modifiquem schema/tabelas
-- Criar/alterar/remover esquemas
-- Instalar/remover extensões do PostgreSQL
-- Modificar configurações de performance do banco
-- Alterar scripts em `infra/` sem aprovação
-
-### ✅ Permitido (com documentação):
-
-- Adicionar novos scripts SQL em `infra/postgreSQL/`
-- Criar índices adicionais (após aprovação)
-- Atualizar comentários em objetos existentes
-- Adicionar dados de seed
-
-### 🔄 Recriação do Ambiente
-
-Para recriar o banco de dados do zero:
-
-```bash
-# Executar script de inicialização
-psql -U postgres -d xpertia -f /root/dev/xpertia/mastra-ai/infra/postgreSQL/01-init-database.sql
 ```
 
 ---
@@ -275,58 +184,87 @@ psql -U postgres -d xpertia -f /root/dev/xpertia/mastra-ai/infra/postgreSQL/01-i
 
 ### Agent
 ```typescript
+import { Agent } from '@mastra/core/agent';
+
 export const myAgent = new Agent({
   id: 'my-agent',
   name: 'My Agent',
   instructions: `...`,
   model: 'groq/llama-3.3-70b-versatile',
-  memory: new Memory(), // opcional
 });
 ```
 
 ### Workflow
 ```typescript
-// src/mastra/workflows/ usando createWorkflow + createStep
+import { createWorkflow, createStep } from '@mastra/core/workflows';
+import { z } from 'zod';
+
+const myStep = createStep({
+  id: 'my-step',
+  inputSchema: z.object({ name: z.string() }),
+  outputSchema: z.object({ greeting: z.string() }),
+  execute: async ({ inputData }) => ({
+    greeting: `Hello, ${inputData.name}!`,
+  }),
+});
+
+export const myWorkflow = createWorkflow({
+  id: 'my-workflow',
+  triggerSchema: z.object({ name: z.string() }),
+  steps: [myStep],
+});
 ```
 
 ### Tool
 ```typescript
-// src/mastra/tools/ usando createTool
+import { createTool } from '@mastra/core/tools';
+import { z } from 'zod';
+
+export const myTool = createTool({
+  id: 'my-tool',
+  name: 'My Tool',
+  description: 'O que a tool faz',
+  inputSchema: z.object({ query: z.string() }),
+  outputSchema: z.object({ result: z.string() }),
+  execute: async ({ inputData }) => ({
+    result: `Result: ${inputData.query}`,
+  }),
+});
 ```
-
----
-
-## 🛡️ Segurança
-
-- Nunca faça commit do `.env`
-- Nunca exponha secrets em logs
-- Credenciais via `$VARIAVEL`
-
----
-
-## 📋 Tarefas
-
-Use `.task/[nome].md`:
-- Status: 🔄/✅/❌
-- Subtarefas: `- [ ]`
 
 ---
 
 ## Checklist
 
+### Antes:
 - [ ] Carregou a skill `/mastra`?
-- [ ] PostgreSQL acessível (`./scripts/mastra-studio.sh status`)?
-- [ ] Mastra Studio iniciado (`./scripts/mastra-studio.sh start`)?
-- [ ] Criou em `src/mastra/{agents,workflows,tools}/`?
-- [ ] Exportou em `src/mastra/index.ts`?
-- [ ] Não criou código de interface?
-- [ ] Atualizou `infra/` se modificou o ambiente?
-- [ ] Fez commit das mudanças em `infra/`?
-- [ ] Tem autorização explícita para mudanças na infra?
+- [ ] Verificou documentação atual?
+- [ ] PostgreSQL acessível? (`./scripts/mastra-studio.sh status`)
+
+### Durante:
+- [ ] Criou em `Xpert/src/mastra/{agents,workflows,tools}/`?
+- [ ] Não recriou funcionalidades nativas?
+- [ ] Exportou em `Xpert/src/mastra/index.ts`?
+
+### Após:
+- [ ] Reiniciou o Studio? (`./scripts/mastra-studio.sh restart`)
+- [ ] Verificou em http://localhost:4111?
+
+---
+
+## Arquivos Ignorados
+
+| Arquivo | Propósito |
+|---------|-----------|
+| `.gitignore` | Ignorados pelo Git |
+| `.kimiignore` | Ignorados pelo agente de IA |
+
+**Nunca processe:** `.archive/`, `node_modules/`, arquivos em `.kimiignore`
 
 ---
 
 ## Recursos
 
-- [Documentação do Mastra](https://mastra.ai/llms.txt)
+- [Mastra Docs](https://mastra.ai/llms.txt)
 - [Mastra Studio](http://localhost:4111)
+- **Skill:** `/mastra` — sempre use antes de codar

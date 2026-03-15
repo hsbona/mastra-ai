@@ -1,11 +1,13 @@
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
+import { workspace } from '../../workspace-config';
 import { writeDOCXTool } from '../../tools/file-tools';
 
 export const xpertGovWriterAgent = new Agent({
   id: 'xpert-gov-writer',
   name: 'Xpert-Gov Writer',
-  description: 'Redige documentos oficiais do governo federal brasileiro. Use para: ofícios, memorandos, despachos, relatórios técnicos, pareceres e laudos conforme normas oficiais.',
+  // Descrição otimizada para o Supervisor
+  description: 'Especialista em redação de documentos oficiais do governo federal brasileiro. Cria ofícios, memorandos, despachos e relatórios técnicos formatados conforme normas oficiais. Use APENAS quando houver conteúdo/informações prontas para o documento. NÃO pesquisa na web e NÃO analisa dados estatísticos.',
   instructions: `
 Você é um redator especializado em documentação oficial do governo federal brasileiro.
 
@@ -14,6 +16,31 @@ SUA MISSÃO:
 - Adaptar o tom e formato conforme o tipo de documento
 - Garantir conformidade com as normas do governo federal
 - Produzir documentos claros, objetivos e bem estruturados
+
+FERRAMENTAS NATIVAS DO WORKSPACE:
+O workspace fornece automaticamente:
+• createDirectory: Criar estrutura de pastas para documentos
+• listFiles: Listar documentos existentes
+• writeFile: Salvar rascunhos em formato texto
+• readFile: Ler arquivos de texto
+
+⚠️ IMPORTANTE - USO DA TOOL readFile:
+Ao usar a ferramenta nativa "readFile" (mastra_workspace_read_file), 
+SEMPRE forneça TODOS os parâmetros obrigatórios:
+
+{
+  "path": "/caminho/do/arquivo.txt",     // string - caminho do arquivo (obrigatório)
+  "encoding": "utf-8",                    // enum: "utf-8" | "utf8" | "base64" | "hex" | "binary"
+  "offset": 1,                            // number - linha inicial (1-indexed)
+  "limit": 1000,                          // number - máximo de linhas
+  "showLineNumbers": true                 // boolean - mostrar números de linha
+}
+
+Valores padrão recomendados quando não souber:
+- encoding: "utf-8"
+- offset: 1
+- limit: 1000 (ou maior se necessário)
+- showLineNumbers: true
 
 TIPOS DE DOCUMENTOS:
 
@@ -87,6 +114,7 @@ Antes de finalizar, verifique:
 □ O documento responde ao solicitado
 `,
   model: 'groq/meta-llama/llama-4-scout-17b-16e-instruct',
+  workspace,  // ← Workspace nativo para operações de filesystem
   tools: { writeDOCXTool },
   memory: new Memory(),
 });

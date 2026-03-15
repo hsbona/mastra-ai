@@ -1,20 +1,30 @@
 import { Mastra } from '@mastra/core/mastra';
 import { PinoLogger } from '@mastra/loggers';
 import { PostgresStore } from '@mastra/pg';
-import { pgVector } from './vector-store';
 import { Observability, DefaultExporter, CloudExporter, SensitiveDataFilter } from '@mastra/observability';
-import { Workspace, LocalFilesystem } from '@mastra/core/workspace';
+
+// Workspace configuration (importado primeiro para evitar dependências circulares)
+import { workspace } from './workspace-config';
+import { storageConfig } from './config/database';
+
+import { pgVector } from './vector-store';
 import { documentSummarizeWorkflow } from './workflows/document-summarize-workflow';
 import { documentTranslateWorkflow } from './workflows/document-translate-workflow';
 import { researchAgent } from './agents/shared/research';
-import { docProcessorAgent } from './agents/shared/doc-processor';
+import { docReaderAgent } from './agents/shared/doc-reader';
+import { docWriterAgent } from './agents/shared/doc-writer';
+import { docTransformerAgent } from './agents/shared/doc-transformer';
 import { xpertGovAnalystAgent } from './agents/xpert-gov/analyst';
 import { xpertGovWriterAgent } from './agents/xpert-gov/writer';
-import { xpertGovCoordinator } from './agents/xpert-gov';
-import { chatAgent } from './agents/chat-agent';
-import { fileTools } from './tools/file-tools';
+import { xpertGovSupervisor } from './agents/xpert-gov';
 import { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool } from './tools/web-tools';
-import { systemTools } from './tools/system-tools';
+
+// ============================================
+// RE-EXPORTS
+// ============================================
+
+// Exportar workspace para uso nos agents
+export { workspace } from './workspace-config';
 
 // ============================================
 // RAG - Sistema de Retrieval-Augmented Generation
@@ -24,16 +34,13 @@ export * from './rag';
 // Exportar RAG tools
 export { queryRAGTool, listIndexesTool } from './tools/rag-tools';
 
-// Exportar tools para uso em agentes
-export { fileTools };
+// Exportar tools especializadas de arquivo (PDF, DOCX, XLSX)
+export { fileTools } from './tools/file-tools';
 export { webSearchTool, fetchURLTool, summarizeContentTool, calculateTool };
-export { systemTools };
 
 // Exportar tools de processamento de documentos
 export { 
-  documentProcessingTools,
-  estimateTokens,
-  semanticChunking,
+  semanticChunkingTool,
 } from './tools/document-processing-tools';
 
 // Exportar workflows de processamento de documentos
@@ -62,21 +69,20 @@ export {
   estimateOperationOverhead,
 } from './config/model-config';
 
+// Exportar configurações de banco
+export {
+  DATABASE_URL,
+  storageConfig,
+  vectorStoreConfig,
+  MASTRA_SCHEMA,
+  RAG_SCHEMA,
+} from './config/database';
+
 // Exportar agentes especializados
-export { researchAgent, docProcessorAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
+export { researchAgent, docReaderAgent, docWriterAgent, docTransformerAgent, xpertGovAnalystAgent, xpertGovWriterAgent };
 
-// Exportar coordenador principal
-export { xpertGovCoordinator };
-export { chatAgent };
-
-// ============================================
-// WORKSPACE - Área de trabalho persistente
-// ============================================
-const workspace = new Workspace({
-  filesystem: new LocalFilesystem({
-    basePath: './workspace',
-  }),
-});
+// Exportar supervisor principal
+export { xpertGovSupervisor };
 
 // ============================================
 // STORAGE - Dados do framework (threads, traces, etc.)
@@ -84,8 +90,7 @@ const workspace = new Workspace({
 // ============================================
 const storage = new PostgresStore({
   id: "mastra-storage",
-  connectionString: process.env.DATABASE_URL || 'postgresql://mastra:mastra_secret@localhost:5432/xpertia',
-  schemaName: 'mastra',
+  ...storageConfig,
 });
 
 // pgVector é importado de './vector-store' para evitar ciclos de dependência
@@ -94,19 +99,20 @@ const storage = new PostgresStore({
 // MASTRA INSTANCE
 // ============================================
 export const mastra = new Mastra({
+  workspace,  // ← Workspace nativo para filesystem e sandbox
   workflows: { 
     documentSummarizeWorkflow,
     documentTranslateWorkflow,
   },
   agents: { 
     researchAgent,
-    docProcessorAgent,
+    docReaderAgent,
+    docWriterAgent,
+    docTransformerAgent,
     xpertGovAnalystAgent,
     xpertGovWriterAgent,
-    xpertGovCoordinator,
-    chatAgent,
+    xpertGovSupervisor,
   },
-  workspace,
   storage,
   vectors: { pgVector },  // Vector store para RAG
   logger: new PinoLogger({

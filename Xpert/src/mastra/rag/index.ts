@@ -129,9 +129,12 @@ export async function processDocument(filePath: string): Promise<ProcessedDocume
  * Extrai texto de arquivos PDF
  */
 async function extractFromPDF(filePath: string, fileName: string): Promise<ProcessedDocument> {
+  if (!readPDFTool.execute) {
+    throw new Error('readPDFTool.execute não disponível');
+  }
   const result = await readPDFTool.execute({ 
     filePath: path.relative('./workspace', filePath) 
-  });
+  }, {} as any);
   
   if (!result.success) {
     throw new Error(`Erro ao ler PDF: ${result.error}`);
@@ -152,16 +155,19 @@ async function extractFromPDF(filePath: string, fileName: string): Promise<Proce
  * Extrai texto de arquivos DOCX
  */
 async function extractFromDOCX(filePath: string, fileName: string): Promise<ProcessedDocument> {
+  if (!readDOCXTool.execute) {
+    throw new Error('readDOCXTool.execute não disponível');
+  }
   const result = await readDOCXTool.execute({ 
     filePath: path.relative('./workspace', filePath) 
-  });
+  }, {} as any);
   
   if (!result.success) {
     throw new Error(`Erro ao ler DOCX: ${result.error}`);
   }
   
   // Extrair título dos headings se disponível
-  const title = result.headings.find(h => h.level === 1)?.text;
+  const title = result.headings.find((h: { level: number; text: string }) => h.level === 1)?.text;
   
   return {
     text: result.text,
@@ -485,7 +491,7 @@ export async function listIndexes(): Promise<string[]> {
  * @returns Estatísticas do índice
  */
 export async function describeIndex(indexName: string) {
-  return await pgVector.describeIndex(indexName);
+  return await pgVector.describeIndex({ indexName });
 }
 
 /**
@@ -494,7 +500,7 @@ export async function describeIndex(indexName: string) {
  * @param indexName - Nome do índice a deletar
  */
 export async function deleteIndex(indexName: string): Promise<void> {
-  await pgVector.deleteIndex(indexName);
+  await pgVector.deleteIndex({ indexName });
 }
 
 /**
@@ -535,7 +541,7 @@ export async function indexExists(indexName: string): Promise<boolean> {
  * @returns Número de vetores
  */
 export async function countVectors(indexName: string): Promise<number> {
-  const stats = await pgVector.describeIndex(indexName);
+  const stats = await pgVector.describeIndex({ indexName });
   return stats.count;
 }
 

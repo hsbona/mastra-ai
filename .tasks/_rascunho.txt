@@ -1,0 +1,3 @@
+Ajuste scripts/mastra-studio.sh para garantir que TODOS os processos Mastra sejam finalizados ao parar o reinciar os serviços.
+Considere a configuração de pm2 definida em infra/pm2/ecosystem.config.js na sua análise, ou a conifuguração real de pm2.
+Verifiquie se o Kimi-code extension, junto com o VSCode remote, está executando os comandos na VPS remota, e não na máquina de desenvolvimento local. Temos essa garantia?
