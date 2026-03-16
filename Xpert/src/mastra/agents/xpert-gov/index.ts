@@ -12,6 +12,7 @@ import {
   fileStatSafe,
 } from '../../tools/workspace-safe';
 import { webSearchTool, calculateTool } from '../../tools/web-tools';
+import { translatePDFTool, createTranslatedPDFTool } from '../../tools/file-tools';
 import { docReaderAgent } from '../shared/doc-reader';
 import { researchAgent } from '../shared/research';
 import { analystAgent } from './analyst';
@@ -366,6 +367,9 @@ Se completo → ENTREGUE ao usuário
     delegate_research: researchTool,
     delegate_analyst: analystTool,
     delegate_writer: writerTool,
+    // Tools de tradução de PDF
+    translate_pdf: translatePDFTool,
+    create_translated_pdf: createTranslatedPDFTool,
   },
 
   // Memória persistente

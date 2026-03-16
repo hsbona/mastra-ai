@@ -17,6 +17,7 @@ export { readDOCXTool } from './read-docx';
 export { readExcelTool } from './read-excel';
 export { writeDOCXTool } from './write-docx';
 export { writeExcelTool } from './write-excel';
+export { translatePDFTool, createTranslatedPDFTool } from './translate-pdf';
 
 // Barrel export para conveniência
 import { readPDFTool } from './read-pdf';
@@ -24,6 +25,7 @@ import { readDOCXTool } from './read-docx';
 import { readExcelTool } from './read-excel';
 import { writeDOCXTool } from './write-docx';
 import { writeExcelTool } from './write-excel';
+import { translatePDFTool, createTranslatedPDFTool } from './translate-pdf';
 
 export const fileTools = {
   readPDFTool,
@@ -31,4 +33,6 @@ export const fileTools = {
   readExcelTool,
   writeDOCXTool,
   writeExcelTool,
+  translatePDFTool,
+  createTranslatedPDFTool,
 };
